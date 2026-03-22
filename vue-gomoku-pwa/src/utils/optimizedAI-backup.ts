@@ -1,14 +1,14 @@
-/**
- * AI Engine for Gomoku Game
- * Minimax Algorithm with Alpha-Beta Pruning
+﻿/**
+ * ������������AI����
+ * ʵ��Minimax�㷨 + Alpha-Beta��֦ + ���ʽ�Ż�
  */
 
 export interface AIConfig {
-  difficulty: 'easy' | 'medium' | 'hard' | 'expert' | 'master'
+  difficulty: 'easy' | 'medium' | 'hard' | 'expert'
   maxDepth: number
-  maxThinkTime: number
+  maxThinkTime: number // ���˼��ʱ�䣨���룩
   enableOpening: boolean
-  randomFactor: number
+  randomFactor: number // 0-1�����������
 }
 
 export interface Position {
@@ -30,14 +30,23 @@ export class GomokuAI {
   private readonly MAX_SCORE = 100000
   private readonly MIN_SCORE = -100000
   
+  // �������ֱ�
   private readonly PATTERNS = {
+    // ����
     FIVE: 100000,
+    // ����
     LIVE_FOUR: 10000,
+    // ����
     RUSH_FOUR: 1000,
+    // ����
     LIVE_THREE: 1000,
+    // ����
     SLEEP_THREE: 100,
+    // ���
     LIVE_TWO: 100,
+    // �߶�
     SLEEP_TWO: 10,
+    // ��һ
     LIVE_ONE: 10
   }
 
@@ -46,20 +55,26 @@ export class GomokuAI {
   private startTime = 0
   private transpositionTable = new Map<string, { score: number; depth: number; flag: 'exact' | 'lowerbound' | 'upperbound' }>()
   
+  // ���ֿ�
   private readonly openingMoves = [
-    [7, 7], [7, 8], [8, 7], [6, 7], [7, 6],
-    [8, 8], [6, 6], [8, 6], [6, 8]
+    [7, 7], // ��Ԫ
+    [7, 8], [8, 7], [6, 7], [7, 6], // ��Ԫ��Χ
+    [8, 8], [6, 6], [8, 6], [6, 8]  // �Խ�
   ]
 
   constructor(config: AIConfig) {
     this.config = config
   }
 
+  /**
+   * ��ȡ����߷�
+   */
   async getBestMove(board: (string | null)[][], player: 'black' | 'white'): Promise<MoveResult> {
     this.startTime = Date.now()
     this.nodesSearched = 0
     this.transpositionTable.clear()
 
+    // ����ǿ��֣�ʹ�ÿ��ֿ�
     const moveCount = this.getMoveCount(board)
     if (this.config.enableOpening && moveCount <= 2) {
       const openingMove = this.getOpeningMove(board)
@@ -74,11 +89,13 @@ export class GomokuAI {
       }
     }
 
+    // ��ȡ��ѡλ��
     const candidates = this.generateCandidates(board, player)
     if (candidates.length === 0) {
-      throw new Error('No available moves')
+      throw new Error('�޿���λ��')
     }
 
+    // ���ֻ��һ����ѡλ��
     if (candidates.length === 1) {
       return {
         position: candidates[0],
@@ -89,6 +106,7 @@ export class GomokuAI {
       }
     }
 
+    // ���������
     let bestMove = candidates[0]
     let bestScore = this.MIN_SCORE
     let bestLine: Position[] = []
@@ -104,12 +122,14 @@ export class GomokuAI {
         bestScore = result.score
         bestLine = result.bestLine
         
+        // ����ҵ���ʤ�߷���ֱ�ӷ���
         if (Math.abs(bestScore) >= this.PATTERNS.FIVE) {
           break
         }
       }
     }
 
+    // ��������
     if (this.config.randomFactor > 0 && Math.random() < this.config.randomFactor) {
       const topCandidates = candidates
         .sort((a, b) => (b.score || 0) - (a.score || 0))
@@ -126,6 +146,9 @@ export class GomokuAI {
     }
   }
 
+  /**
+   * ��ʱ�����Ƶ�����
+   */
   private searchWithTimeLimit(
     board: (string | null)[][],
     maxDepth: number,
@@ -141,6 +164,7 @@ export class GomokuAI {
         return null
       }
 
+      // ģ������
       board[candidate.row][candidate.col] = player
       
       const score = this.minimax(
@@ -154,6 +178,7 @@ export class GomokuAI {
         [candidate]
       )
       
+      // ��������
       board[candidate.row][candidate.col] = null
 
       if (score > bestScore) {
@@ -172,6 +197,9 @@ export class GomokuAI {
     }
   }
 
+  /**
+   * Minimax�㷨 + Alpha-Beta��֦
+   */
   private minimax(
     board: (string | null)[][],
     depth: number,
@@ -184,19 +212,23 @@ export class GomokuAI {
   ): number {
     this.nodesSearched++
 
+    // ���ʱ������
     if (Date.now() - this.startTime > this.config.maxThinkTime) {
       return this.evaluateBoard(board, aiPlayer)
     }
 
+    // �����Ϸ����
     const winner = this.checkWinner(board)
     if (winner) {
       return winner === aiPlayer ? this.PATTERNS.FIVE : -this.PATTERNS.FIVE
     }
 
+    // �����������
     if (depth <= 0) {
       return this.evaluateBoard(board, aiPlayer)
     }
 
+    // �û������
     const boardKey = this.getBoardKey(board)
     const cached = this.transpositionTable.get(boardKey)
     if (cached && cached.depth >= depth) {
@@ -209,7 +241,7 @@ export class GomokuAI {
       }
     }
 
-    const candidates = this.generateCandidates(board, currentPlayer, 8)
+    const candidates = this.generateCandidates(board, currentPlayer, 8) // ���ƺ�ѡ����
     
     if (isMaximizing) {
       let maxEval = this.MIN_SCORE
@@ -233,10 +265,11 @@ export class GomokuAI {
         alpha = Math.max(alpha, eval_score)
         
         if (beta <= alpha) {
-          break
+          break // Beta��֦
         }
       }
       
+      // �洢���û���
       this.storeInTranspositionTable(boardKey, maxEval, depth, alpha, beta)
       return maxEval
     } else {
@@ -261,15 +294,19 @@ export class GomokuAI {
         beta = Math.min(beta, eval_score)
         
         if (beta <= alpha) {
-          break
+          break // Alpha��֦
         }
       }
       
+      // �洢���û���
       this.storeInTranspositionTable(boardKey, minEval, depth, alpha, beta)
       return minEval
     }
   }
 
+  /**
+   * ���ɺ�ѡλ��
+   */
   private generateCandidates(
     board: (string | null)[][],
     player: 'black' | 'white',
@@ -279,11 +316,14 @@ export class GomokuAI {
     const visited = new Set<string>()
     const opponent = player === 'black' ? 'white' : 'black'
 
+    // ���ȼ��ؼ���вλ��
     const threatCandidates = this.findThreatPositions(board, player, opponent)
     
+    // Ȼ��������������Χ��λ��
     for (let i = 0; i < this.BOARD_SIZE; i++) {
       for (let j = 0; j < this.BOARD_SIZE; j++) {
         if (board[i][j] !== null) {
+          // �����Χ��Χ����
           for (let di = -2; di <= 2; di++) {
             for (let dj = -2; dj <= 2; dj++) {
               if (di === 0 && dj === 0) continue
@@ -305,6 +345,7 @@ export class GomokuAI {
       }
     }
 
+    // �ϲ���в��ѡλ��
     for (const threat of threatCandidates) {
       const key = `${threat.row},${threat.col}`
       if (!visited.has(key)) {
@@ -312,15 +353,20 @@ export class GomokuAI {
       }
     }
 
+    // ���û�к�ѡλ�ã������̣�����������λ��
     if (candidates.length === 0) {
       return [{ row: 7, col: 7 }]
     }
 
+    // ���������򣬷�����Ѻ�ѡ
     return candidates
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, maxCandidates)
   }
 
+  /**
+   * ������вλ��
+   */
   private findThreatPositions(
     board: (string | null)[][],
     player: 'black' | 'white',
@@ -332,11 +378,14 @@ export class GomokuAI {
       for (let j = 0; j < this.BOARD_SIZE; j++) {
         if (board[i][j] !== null) continue
         
+        // ������λ�ö��ҷ�����в��ֵ
         const myThreat = this.evaluatePosition(board, i, j, player)
+        // ������λ�öԶ��ֵ���в��ֵ
         const oppThreat = this.evaluatePosition(board, i, j, opponent)
         
+        // ����ǹؼ�λ�ã������ѡ
         if (myThreat >= this.PATTERNS.LIVE_THREE || oppThreat >= this.PATTERNS.LIVE_THREE) {
-          const score = Math.max(myThreat, oppThreat * 1.2)
+          const score = Math.max(myThreat, oppThreat * 1.2) // ������΢��ҪһЩ
           threats.push({ row: i, col: j, score })
         }
       }
@@ -345,12 +394,16 @@ export class GomokuAI {
     return threats.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 8)
   }
 
+  /**
+   * ������������
+   */
   private evaluateBoard(board: (string | null)[][], player: 'black' | 'white'): number {
     const opponent = player === 'black' ? 'white' : 'black'
     
     let myScore = 0
     let oppScore = 0
 
+    // ��������λ��
     for (let i = 0; i < this.BOARD_SIZE; i++) {
       for (let j = 0; j < this.BOARD_SIZE; j++) {
         if (board[i][j] === null) continue
@@ -369,6 +422,9 @@ export class GomokuAI {
     return myScore - oppScore
   }
 
+  /**
+   * ��������λ�õķ���
+   */
   private evaluatePosition(
     board: (string | null)[][],
     row: number,
@@ -378,35 +434,43 @@ export class GomokuAI {
     let totalScore = 0
     const opponent = player === 'black' ? 'white' : 'black'
     const directions = [
-      [1, 0], [0, 1], [1, 1], [1, -1]
+      [1, 0], [0, 1], [1, 1], [1, -1] // ˮƽ����ֱ���Խ���
     ]
 
+    // �ȼ���Ƿ���������ʤ����ֹ���ֻ�ʤ
     for (const [dx, dy] of directions) {
+      // ����Լ�����в
       const myThreat = this.checkThreat(board, row, col, dx, dy, player)
       if (myThreat >= this.PATTERNS.FIVE) {
-        return this.PATTERNS.FIVE
+        return this.PATTERNS.FIVE // ������ʤ
       }
       if (myThreat >= this.PATTERNS.LIVE_FOUR) {
-        totalScore += myThreat * 2
+        totalScore += myThreat * 2 // ǿ������
       }
 
+      // �����ֵ���в
       const oppThreat = this.checkThreat(board, row, col, dx, dy, opponent)
       if (oppThreat >= this.PATTERNS.LIVE_FOUR) {
-        totalScore += oppThreat * 1.5
+        totalScore += oppThreat * 1.5 // �������
       }
     }
 
+    // ��������
     for (const [dx, dy] of directions) {
       const lineScore = this.evaluateLine(board, row, col, dx, dy, player)
       totalScore += lineScore
     }
 
+    // λ��Ȩ�أ�����λ�ø��м�ֵ
     const centerBonus = this.getCenterBonus(row, col)
     totalScore += centerBonus
 
     return totalScore
   }
 
+  /**
+   * �����в�ȼ�
+   */
   private checkThreat(
     board: (string | null)[][],
     row: number,
@@ -415,18 +479,25 @@ export class GomokuAI {
     dy: number,
     player: 'black' | 'white'
   ): number {
+    // ��ʱ��������
     board[row][col] = player
     const threat = this.evaluateLine(board, row, col, dx, dy, player)
-    board[row][col] = null
+    board[row][col] = null // ����
     return threat
   }
 
+  /**
+   * ��ȡ����λ�ý���
+   */
   private getCenterBonus(row: number, col: number): number {
     const center = 7
     const distance = Math.abs(row - center) + Math.abs(col - center)
     return Math.max(0, 20 - distance * 2)
   }
 
+  /**
+   * ����һ�����ϵķ���
+   */
   private evaluateLine(
     board: (string | null)[][],
     row: number,
@@ -435,9 +506,10 @@ export class GomokuAI {
     dy: number,
     player: 'black' | 'white'
   ): number {
-    let count = 1
-    let blocked = 0
+    let count = 1 // ��ǰλ��
+    let blocked = 0 // ���赲�ķ�����
 
+    // ������������
     let i = row + dx, j = col + dy
     while (this.isValidPosition(i, j) && board[i][j] === player) {
       count++
@@ -448,6 +520,7 @@ export class GomokuAI {
       blocked++
     }
 
+    // �򸺷�������
     i = row - dx
     j = col - dy
     while (this.isValidPosition(i, j) && board[i][j] === player) {
@@ -459,45 +532,52 @@ export class GomokuAI {
       blocked++
     }
 
+    // �������������赲�������
     return this.getPatternScore(count, blocked)
   }
 
+  /**
+   * �������ͻ�ȡ����
+   */
   private getPatternScore(count: number, blocked: number): number {
     if (count >= 5) return this.PATTERNS.FIVE
     
     if (count === 4) {
       if (blocked === 0) {
-        return this.PATTERNS.LIVE_FOUR
+        return this.PATTERNS.LIVE_FOUR // ���ģ���ʤ
       } else if (blocked === 1) {
-        return this.PATTERNS.RUSH_FOUR
+        return this.PATTERNS.RUSH_FOUR // ���ģ���в�ܴ�
       } else {
-        return this.PATTERNS.SLEEP_THREE
+        return this.PATTERNS.SLEEP_THREE // ˫���Ļ�������
       }
     }
     
     if (count === 3) {
       if (blocked === 0) {
-        return this.PATTERNS.LIVE_THREE
+        return this.PATTERNS.LIVE_THREE // ���������γɶ������
       } else if (blocked === 1) {
-        return this.PATTERNS.SLEEP_THREE
+        return this.PATTERNS.SLEEP_THREE // ���������γɳ���
       } else {
-        return this.PATTERNS.SLEEP_TWO
+        return this.PATTERNS.SLEEP_TWO // ˫�»�������
       }
     }
     
     if (count === 2) {
       if (blocked === 0) {
-        return this.PATTERNS.LIVE_TWO
+        return this.PATTERNS.LIVE_TWO // �����Ǳ���ϴ�
       } else if (blocked === 1) {
-        return this.PATTERNS.SLEEP_TWO
+        return this.PATTERNS.SLEEP_TWO // �߶�����һ����ֵ
       } else {
-        return 1
+        return 1 // ˫�»����ֵ��С
       }
     }
     
     return blocked === 0 ? this.PATTERNS.LIVE_ONE : 1
   }
 
+  /**
+   * ��ȡ�����߷�
+   */
   private getOpeningMove(board: (string | null)[][]): Position | null {
     for (const [row, col] of this.openingMoves) {
       if (board[row][col] === null) {
@@ -507,6 +587,9 @@ export class GomokuAI {
     return null
   }
 
+  /**
+   * ���ʤ������
+   */
   private checkWinner(board: (string | null)[][]): 'black' | 'white' | null {
     const directions = [[1, 0], [0, 1], [1, 1], [1, -1]]
     
@@ -518,6 +601,7 @@ export class GomokuAI {
         for (const [dx, dy] of directions) {
           let count = 1
           
+          // ������
           let x = i + dx, y = j + dy
           while (this.isValidPosition(x, y) && board[x][y] === player) {
             count++
@@ -525,6 +609,7 @@ export class GomokuAI {
             y += dy
           }
           
+          // ������
           x = i - dx
           y = j - dy
           while (this.isValidPosition(x, y) && board[x][y] === player) {
@@ -543,6 +628,9 @@ export class GomokuAI {
     return null
   }
 
+  /**
+   * ��ȡ�����ƶ���
+   */
   private getMoveCount(board: (string | null)[][]): number {
     let count = 0
     for (let i = 0; i < this.BOARD_SIZE; i++) {
@@ -553,14 +641,23 @@ export class GomokuAI {
     return count
   }
 
+  /**
+   * ���λ���Ƿ���Ч
+   */
   private isValidPosition(row: number, col: number): boolean {
     return row >= 0 && row < this.BOARD_SIZE && col >= 0 && col < this.BOARD_SIZE
   }
 
+  /**
+   * ��ȡ���̼�ֵ�������û����
+   */
   private getBoardKey(board: (string | null)[][]): string {
     return board.flat().map(cell => cell || '0').join('')
   }
 
+  /**
+   * �洢���û���
+   */
   private storeInTranspositionTable(
     key: string,
     score: number,
@@ -578,15 +675,22 @@ export class GomokuAI {
     
     this.transpositionTable.set(key, { score, depth, flag })
     
+    // �����û����С
     if (this.transpositionTable.size > 100000) {
       this.transpositionTable.clear()
     }
   }
 
+  /**
+   * ��������
+   */
   updateConfig(newConfig: Partial<AIConfig>) {
     this.config = { ...this.config, ...newConfig }
   }
 
+  /**
+   * ��ȡAI״̬
+   */
   getStatus() {
     return {
       config: this.config,
@@ -596,6 +700,9 @@ export class GomokuAI {
   }
 }
 
+/**
+ * AI����Ԥ��
+ */
 export const AIPresets: Record<string, AIConfig> = {
   easy: {
     difficulty: 'easy',
@@ -627,4 +734,5 @@ export const AIPresets: Record<string, AIConfig> = {
   }
 }
 
+// ��������AIʵ��
 export const gomokuAI = new GomokuAI(AIPresets.medium)
