@@ -14,9 +14,9 @@
 
 ## 在线体验
 
-访问：[五子棋 PWA 游戏](https://your-project.pages.edgeone.app)（EdgeOne Pages 免费域名，部署完成后更新）
+访问：[五子棋 PWA 游戏](https://five-chess-pma-beqwbm4e.edgeone.cool)
 
-> ? **部署状态**: 已配置自动部署，每次 Git 推送都会自动更新
+> ? **部署状态**: 已成功部署到 EdgeOne Pages，每次 Git 推送都会自动更新
 
 ## 安装到设备
 
