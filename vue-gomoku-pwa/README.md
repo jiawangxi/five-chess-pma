@@ -148,7 +148,7 @@ vue-gomoku-pwa/
 ## ? 音效设计
 
 ### 音效列表
-- **黑棋落子**: 523.25Hz (C5) - 沉稳音调
+- **黑棋落子**: 523.25Hz (C5) - 沉着音调
 - **白棋落子**: 783.99Hz (G5) - 清脆音调  
 - **游戏胜利**: C-E-G三和弦上行
 - **悔棋操作**: E-C下行音阶
@@ -171,53 +171,36 @@ vue-gomoku-pwa/
 | 专家    | 8层      | <8s      | 业余5级  | 高手对局 |
 | 大师    | 10层     | <12s     | 准职业   | 挑战极限 |
 
-## ?? 开发指南
+## ?? 技术栈
 
-### 添加新音效
-```typescript
-// 在 soundManager.ts 中添加配置
-soundConfig: {
-  newSound: {
-    frequency: 440,        // 音调频率
-    duration: 0.2,         // 持续时间
-    type: 'sine',          // 波形类型
-    volume: 0.5            // 音量大小
-  }
-}
+### 前端框架
+- **Vue 3** + **Composition API**: 构建现代化的前端界面
+- **State Management**: Pinia (替代Vuex的轻量级状态管理工具)
+- **Routing**: Vue Router
+- **Build Tool**: Vite
+- **Language**: TypeScript
+- **PWA**: Vite PWA Plugin + Workbox
+- **CSS**: 原生CSS (响应式设计)
+- **AI算法**: 自研五子棋AI引擎
 
-// 播放音效
-soundManager.playSound('newSound', {
-  pitch: 1.2,              // 音调调节
-  volume: 0.8              // 音量调节
-})
+## ? 开发规范
+
+### 编码规范
+- **所有源码文件必须使用 UTF-8 编码**
+- 使用 `.editorconfig` 统一编辑器设置
+- Git hooks 自动检查文件编码
+
+### 编码检查工具
+```bash
+# 检查所有源码文件编码
+npm run check-encoding
+
+# 自动修复编码问题
+npm run fix-encoding
 ```
 
-### 调整AI参数
-```typescript
-// 在 optimizedAI.ts 中修改配置
-constructor(difficulty: AIDifficulty) {
-  const configs = {
-    custom: {
-      maxDepth: 8,          // 搜索深度
-      maxThinkTime: 5000,   // 思考时间限制(ms)
-      enableOpening: true,  // 开启开局库
-      randomFactor: 0.1     // 随机因子
-    }
-  }
-}
-```
-
-### 扩展存档功能
-```typescript
-// 在 gameStorage.ts 中添加方法
-saveToCloud(gameState: GameState) {
-  // 实现云端存档
-}
-
-loadFromCloud(): Promise<GameState> {
-  // 实现云端加载
-}
-```
+### Git Hooks
+项目配置了 `pre-commit` hook，每次提交时自动检查文件编码，确保代码质量。
 
 ## ? 性能优化
 
