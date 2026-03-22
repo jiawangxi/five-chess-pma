@@ -85,10 +85,25 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { ref, reactive, nextTick, onMounted, onUnmounted } from 'vue'
-import { gameStorage, type GameState } from '../utils/gameStorage'
+import { gameStorage } from '../utils/gameStorage'
 import { soundManager } from '../utils/soundManager'
+
+interface GameState {
+  board: (string | null)[][]
+  currentPlayer: 'black' | 'white'
+  moves: Array<{
+    row: number
+    col: number
+    player: 'black' | 'white'
+  }>
+  winner: string | null
+  aiEnabled: boolean
+  gameStartTime: number
+  lastMoveTime: number
+  gameId: string
+}
 
 export default {
   name: 'HomeView',
