@@ -73,6 +73,14 @@
           🤖 AI对手
         </label>
       </div>
+      <div class="sound-controls">
+        <button @click="toggleSound" class="btn btn-sound" :class="{ active: soundEnabled }">
+          {{ soundEnabled ? '🔊' : '🔇' }} 音效
+        </button>
+        <button @click="toggleBackgroundMusic" class="btn btn-music" :class="{ active: backgroundMusicEnabled }">
+          {{ backgroundMusicEnabled ? '🎵' : '🎼' }} 音乐
+        </button>
+      </div>
     </footer>
   </div>
 </template>
@@ -80,6 +88,7 @@
 <script>
 import { ref, reactive, nextTick, onMounted, onUnmounted } from 'vue'
 import { gameStorage, type GameState } from '../utils/gameStorage'
+import { soundManager } from '../utils/soundManager'
 
 export default {
   name: 'HomeView',
@@ -95,6 +104,8 @@ export default {
     const gameStartTime = ref(0)
     const lastMoveTime = ref(0)
     const showAutoSaveRestore = ref(false)
+    const soundEnabled = ref(true)
+    const backgroundMusicEnabled = ref(true)
 
     // 检查是否为获胜位置的棋子
     const isWinnerCell = (row, col) => {
@@ -165,34 +176,48 @@ export default {
       const randomIndex = Math.floor(Math.random() * targetCells.length)
       const [row, col] = targetCells[randomIndex]
       
-      board[row][col] = currentPlayer.value
-      moves.value.push({ row, col, player: currentPlayer.value })
+      const player = currentPlayer.value
+      board[row][col] = player
+      moves.value.push({ row, col, player })
       lastMoveTime.value = Date.now()
 
-      const gameWinner = checkWinner(row, col, currentPlayer.value)
+      // 播放AI落子音效
+      const soundName = player === 'black' ? 'placeBlack' : 'placeWhite'
+      soundManager.playSound(soundName, { pitch: 0.9 }) // AI音效音调稍低
+
+      const gameWinner = checkWinner(row, col, player)
       if (gameWinner) {
         winner.value = gameWinner
+        // 播放获胜音效
+        setTimeout(() => soundManager.playSound('gameWin'), 200)
         return
       }
 
-      currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black'
+      currentPlayer.value = player === 'black' ? 'white' : 'black'
     }
 
     // 玩家下棋
     const makeMove = async (row, col) => {
       if (board[row][col] !== null || winner.value) return
 
-      board[row][col] = currentPlayer.value
-      moves.value.push({ row, col, player: currentPlayer.value })
+      const player = currentPlayer.value
+      board[row][col] = player
+      moves.value.push({ row, col, player })
       lastMoveTime.value = Date.now()
 
-      const gameWinner = checkWinner(row, col, currentPlayer.value)
+      // 播放落子音效
+      const soundName = player === 'black' ? 'placeBlack' : 'placeWhite'
+      soundManager.playSound(soundName)
+
+      const gameWinner = checkWinner(row, col, player)
       if (gameWinner) {
         winner.value = gameWinner
+        // 播放获胜音效
+        setTimeout(() => soundManager.playSound('gameWin'), 200)
         return
       }
 
-      currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black'
+      currentPlayer.value = player === 'black' ? 'white' : 'black'
 
       // AI回合
       if (aiEnabled.value && currentPlayer.value === 'white' && !winner.value) {
@@ -217,6 +242,9 @@ export default {
     // 悔棋
     const undoMove = () => {
       if (moves.value.length === 0) return
+
+      // 播放悔棋音效
+      soundManager.playSound('undoMove')
 
       const lastMove = moves.value.pop()
       board[lastMove.row][lastMove.col] = null
@@ -297,6 +325,9 @@ export default {
 
     // 开始新游戏（带初始化）
     const startNewGame = () => {
+      // 播放开始游戏音效
+      soundManager.playSound('gameStart')
+      
       newGame()
       gameId.value = Date.now().toString(36) + Math.random().toString(36).substr(2)
       gameStartTime.value = Date.now()
@@ -315,8 +346,47 @@ export default {
       }
     }
 
+    // 音效控制函数
+    const toggleSound = () => {
+      soundEnabled.value = !soundEnabled.value
+      soundManager.setSoundEffectsEnabled(soundEnabled.value)
+      // 播放按钮音效
+      if (soundEnabled.value) {
+        soundManager.playSound('buttonClick')
+      }
+    }
+
+    const toggleBackgroundMusic = () => {
+      backgroundMusicEnabled.value = !backgroundMusicEnabled.value
+      soundManager.setBackgroundMusicEnabled(backgroundMusicEnabled.value)
+      soundManager.playSound('buttonClick')
+    }
+
+    // 初始化音效设置
+    const initAudioSettings = () => {
+      const config = soundManager.getConfig()
+      soundEnabled.value = config.soundEffects
+      backgroundMusicEnabled.value = config.backgroundMusic
+    }
+
     // 组件挂载时初始化
-    onMounted(() => {
+    onMounted(async () => {
+      // 初始化音效系统
+      initAudioSettings()
+      
+      // 用户首次交互后初始化音频（浏览器限制）
+      const initAudio = async () => {
+        await soundManager.preloadSounds()
+        if (backgroundMusicEnabled.value) {
+          setTimeout(() => soundManager.playBackgroundMusic(), 1000)
+        }
+        document.removeEventListener('click', initAudio)
+        document.removeEventListener('touchstart', initAudio)
+      }
+      
+      document.addEventListener('click', initAudio)
+      document.addEventListener('touchstart', initAudio)
+
       // 检查是否有自动存档需要恢复
       if (gameStorage.hasAutoSave()) {
         showAutoSaveRestore.value = true
@@ -331,6 +401,7 @@ export default {
     // 组件卸载时清理
     onUnmounted(() => {
       gameStorage.disableAutoSave()
+      soundManager.stopBackgroundMusic()
     })
 
     return {
@@ -340,12 +411,16 @@ export default {
       moves,
       aiEnabled,
       showAutoSaveRestore,
+      soundEnabled,
+      backgroundMusicEnabled,
       makeMove,
       newGame: newGameWithInit,
       undoMove,
       isWinnerCell,
       restoreAutoSave,
-      dismissAutoSave
+      dismissAutoSave,
+      toggleSound,
+      toggleBackgroundMusic
     }
   }
 }
@@ -560,6 +635,38 @@ export default {
   cursor: pointer;
 }
 
+.sound-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sound,
+.btn-music {
+  background: rgba(255,255,255,0.8);
+  color: #333;
+  min-width: 80px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.btn-sound.active,
+.btn-music.active {
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+  color: white;
+}
+
+.btn-sound:not(.active),
+.btn-music:not(.active) {
+  background: rgba(255,255,255,0.5);
+  opacity: 0.7;
+}
+
+.btn-sound:hover,
+.btn-music:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
 /* 自动存档恢复弹窗 */
 .auto-save-restore {
   position: fixed;
@@ -652,6 +759,17 @@ export default {
   .btn {
     width: 100%;
     max-width: 200px;
+  }
+
+  .sound-controls {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-sound,
+  .btn-music {
+    flex: 1;
+    max-width: 100px;
   }
 }
 
