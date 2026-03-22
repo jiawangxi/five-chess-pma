@@ -1,7 +1,7 @@
 {
   "name": "generate-icons",
   "version": "1.0.0",
-  "description": "Éú³ÉPWAÍ¼±ê",
+  "description": "Ã‰ÃºÂ³Ã‰PWAÃÂ¼Â±Ãª",
   "scripts": {
     "generate": "node generate-icons.js"
   },

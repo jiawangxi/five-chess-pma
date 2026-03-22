@@ -27,12 +27,12 @@ test.describe('Gomoku PWA Basic Functions', () => {
     await page.goto('/');
     
     // Test navigation to settings page - use button or link
-    await page.click('[href*="/settings"], button:has-text("设"), button:has-text("Settings")');
+    await page.click('[href*="/settings"], button:has-text("脡猫"), button:has-text("Settings")');
     await page.waitForURL('**/settings');
     await expect(page.locator('h1')).toBeVisible();
     
     // Test back button
-    await page.click('text=返回, text=Back, [href="/"]');
+    await page.click('text=路碌禄脴, text=Back, [href="/"]');
     await page.waitForURL('**/', { timeout: 5000 });
     
     console.log('? Navigation test passed');
@@ -83,7 +83,7 @@ test.describe('Gomoku PWA Basic Functions', () => {
     await page.goto('/settings');
     
     // Look for theme selector
-    const themeSelector = page.locator('select').filter({ hasText: /auto|light|dark|浅色|深色/ }).first();
+    const themeSelector = page.locator('select').filter({ hasText: /auto|light|dark|脟鲁脡芦|脡卯脡芦/ }).first();
     
     if (await themeSelector.isVisible()) {
       // Try switching to dark theme

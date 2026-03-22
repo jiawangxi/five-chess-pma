@@ -13,17 +13,17 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        // 缓存模式配置
+        // 禄潞麓忙脛拢脢陆脜盲脰脙
         skipWaiting: true,
         clientsClaim: true,
         
-        // 预缓存文件模式
+        // 脭陇禄潞麓忙脦脛录镁脛拢脢陆
         globPatterns: [
           '**/*.{js,css,html,ico,png,svg,woff2}',
           'manifest.webmanifest'
         ],
         
-        // 排除不需要缓存的文件
+        // 脜脜鲁媒虏禄脨猫脪陋禄潞麓忙碌脛脦脛录镁
         globIgnores: [
           '**/node_modules/**/*',
           '**/*.map',
@@ -31,12 +31,12 @@ export default defineConfig({
           'workbox-*.js.map'
         ],
         
-        // 预缓存配置
+        // 脭陇禄潞麓忙脜盲脰脙
         dontCacheBustURLsMatching: /\.\w{8}\./,
         
-        // 运行时缓存策略
+        // 脭脣脨脨脢卤禄潞麓忙虏脽脗脭
         runtimeCaching: [
-          // 1. HTML页面 - 网络优先，回退到缓存
+          // 1. HTML脪鲁脙忙 - 脥酶脗莽脫脜脧脠拢卢禄脴脥脣碌陆禄潞麓忙
           {
             urlPattern: /^https:\/\/[^\/]+\/$/,
             handler: 'NetworkFirst',
@@ -44,13 +44,13 @@ export default defineConfig({
               cacheName: 'pages-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 1周
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 1脰脺
               },
               networkTimeoutSeconds: 3
             }
           },
           
-          // 2. API调用 - 网络优先（如果有后端API）
+          // 2. API碌梅脫脙 - 脥酶脗莽脫脜脧脠拢篓脠莽鹿没脫脨潞贸露脣API拢漏
           {
             urlPattern: /^https:\/\/[^\/]+\/api\/.*/,
             handler: 'NetworkFirst', 
@@ -58,13 +58,13 @@ export default defineConfig({
               cacheName: 'api-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 1天
+                maxAgeSeconds: 60 * 60 * 24 // 1脤矛
               },
               networkTimeoutSeconds: 5
             }
           },
           
-          // 3. 静态资源 - 缓存优先
+          // 3. 戮虏脤卢脳脢脭麓 - 禄潞麓忙脫脜脧脠
           {
             urlPattern: /\.(?:js|css|woff2?|ttf|eot)$/,
             handler: 'CacheFirst',
@@ -72,12 +72,12 @@ export default defineConfig({
               cacheName: 'static-resources',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1年
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1脛锚
               }
             }
           },
           
-          // 4. 图片资源 - 缓存优先，回退到网络
+          // 4. 脥录脝卢脳脢脭麓 - 禄潞麓忙脫脜脧脠拢卢禄脴脥脣碌陆脥酶脗莽
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
             handler: 'CacheFirst',
@@ -85,12 +85,12 @@ export default defineConfig({
               cacheName: 'images-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 90 // 90天
+                maxAgeSeconds: 60 * 60 * 24 * 90 // 90脤矛
               }
             }
           },
           
-          // 5. 外部字体 - 缓存优先
+          // 5. 脥芒虏驴脳脰脤氓 - 禄潞麓忙脫脜脧脠
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/,
             handler: 'CacheFirst',
@@ -98,7 +98,7 @@ export default defineConfig({
               cacheName: 'google-fonts-stylesheets',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1年
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1脛锚
               }
             }
           },
@@ -109,12 +109,12 @@ export default defineConfig({
               cacheName: 'google-fonts-webfonts',
               expiration: {
                 maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1年
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1脛锚
               }
             }
           },
           
-          // 6. CDN资源 - 缓存优先
+          // 6. CDN脳脢脭麓 - 禄潞麓忙脫脜脧脠
           {
             urlPattern: /^https:\/\/cdn\./,
             handler: 'CacheFirst',
@@ -122,12 +122,12 @@ export default defineConfig({
               cacheName: 'cdn-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30天
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30脤矛
               }
             }
           },
           
-          // 7. 游戏存档数据 - 网络优先（用于云同步，如果实现）
+          // 7. 脫脦脧路麓忙碌碌脢媒戮脻 - 脥酶脗莽脫脜脧脠拢篓脫脙脫脷脭脝脥卢虏陆拢卢脠莽鹿没脢碌脧脰拢漏
           {
             urlPattern: /\/api\/save\/.*/,
             handler: 'NetworkFirst',
@@ -135,32 +135,32 @@ export default defineConfig({
               cacheName: 'game-saves',
               expiration: {
                 maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 1周
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 1脰脺
               },
               networkTimeoutSeconds: 3
             }
           }
         ],
         
-        // 导航回退缓存
+        // 碌录潞陆禄脴脥脣禄潞麓忙
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
         
-        // 离线回退页面
+        // 脌毛脧脽禄脴脥脣脪鲁脙忙
         offlineGoogleAnalytics: false,
         
-        // 自定义Service Worker内容
+        // 脳脭露篓脪氓Service Worker脛脷脠脻
         additionalManifestEntries: [
-          // 确保关键页面被预缓存
+          // 脠路卤拢鹿脴录眉脪鲁脙忙卤禄脭陇禄潞麓忙
           { url: '/index.html', revision: null },
           { url: '/manifest.webmanifest', revision: null }
         ]
       },
-      // PWA配置
+      // PWA脜盲脰脙
       manifest: {
-        name: '五子棋大师',
-        short_name: '五子棋',
-        description: '专业级五子棋PWA应用，支持AI对战和离线游戏',
+        name: '脦氓脳脫脝氓麓贸脢娄',
+        short_name: '脦氓脳脫脝氓',
+        description: '脳篓脪碌录露脦氓脳脫脝氓PWA脫娄脫脙拢卢脰搂鲁脰AI露脭脮陆潞脥脌毛脧脽脫脦脧路',
         theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',
@@ -186,7 +186,7 @@ export default defineConfig({
           }
         ]
       },
-      // 开发选项
+      // 驴陋路垄脩隆脧卯
       devOptions: {
         enabled: false
       }
@@ -205,51 +205,51 @@ export default defineConfig({
     port: 5173
   },
   build: {
-    // 生产构建目标
+    // 脡煤虏煤鹿鹿陆篓脛驴卤锚
     target: 'es2018',
     outDir: 'dist',
-    // 启用压缩
+    // 脝么脫脙脩鹿脣玫
     minify: 'terser', 
-    // CSS代码分割
+    // CSS麓煤脗毛路脰赂卯
     cssCodeSplit: true,
-    // 资源内联限制 (4KB)
+    // 脳脢脭麓脛脷脕陋脧脼脰脝 (4KB)
     assetsInlineLimit: 4096,
-    // 启用源码映射（用于调试）
+    // 脝么脫脙脭麓脗毛脫鲁脡盲拢篓脫脙脫脷碌梅脢脭拢漏
     sourcemap: process.env.NODE_ENV === 'development',
     
     rollupOptions: {
-      // 优化代码分割
+      // 脫脜禄炉麓煤脗毛路脰赂卯
       output: {
         manualChunks: {
-          // Vue框架核心
+          // Vue驴貌录脺潞脣脨脛
           vue: ['vue', 'vue-router'],
-          // AI引擎独立包
+          // AI脪媒脟忙露脌脕垄掳眉
           'ai-engine': ['./src/utils/optimizedAI'],
-          // 工具模块
+          // 鹿陇戮脽脛拢驴茅
           utils: ['./src/utils/gameStorage', './src/utils/soundManager', './src/utils/settingsManager'],
         },
-        // 文件命名策略
+        // 脦脛录镁脙眉脙没虏脽脗脭
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]'
       },
-      // 外部依赖（如果需要CDN加载）
+      // 脥芒虏驴脪脌脌碌拢篓脠莽鹿没脨猫脪陋CDN录脫脭脴拢漏
       external: []
     },
     
-    // Terser压缩选项
+    // Terser脩鹿脣玫脩隆脧卯
     terserOptions: {
       compress: {
-        // 移除console.log
+        // 脪脝鲁媒console.log
         drop_console: process.env.NODE_ENV === 'production',
         drop_debugger: true
       },
       mangle: {
-        // 保留函数名（用于调试）
+        // 卤拢脕么潞炉脢媒脙没拢篓脫脙脫脷碌梅脢脭拢漏
         keep_fnames: process.env.NODE_ENV === 'development'
       },
       format: {
-        // 移除注释
+        // 脪脝鲁媒脳垄脢脥
         comments: false
       }
     }

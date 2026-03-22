@@ -1,47 +1,47 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * PWA五子棋应用自动化测试配置
- * 用于自动测试PWA功能、缓存策略、设置管理等
+ * PWA脦氓脳脫脝氓脫娄脫脙脳脭露炉禄炉虏芒脢脭脜盲脰脙
+ * 脫脙脫脷脳脭露炉虏芒脢脭PWA鹿娄脛脺隆垄禄潞麓忙虏脽脗脭隆垄脡猫脰脙鹿脺脌铆碌脠
  */
 export default defineConfig({
   testDir: './tests',
-  // 并发运行测试
+  // 虏垄路垄脭脣脨脨虏芒脢脭
   fullyParallel: false,
-  // 失败重试次数
+  // 脢搂掳脺脰脴脢脭麓脦脢媒
   retries: process.env.CI ? 2 : 0,
-  // 并发worker数量
+  // 虏垄路垄worker脢媒脕驴
   workers: process.env.CI ? 1 : undefined,
-  // 测试报告配置
+  // 虏芒脢脭卤篓赂忙脜盲脰脙
   reporter: [
     ['html'],
     ['json', { outputFile: 'test-results.json' }]
   ],
-  // 全局测试配置
+  // 脠芦戮脰虏芒脢脭脜盲脰脙
   use: {
-    // 基础URL（会根据开发/生产环境自动调整）
+    // 禄霉麓隆URL拢篓禄谩赂霉戮脻驴陋路垄/脡煤虏煤禄路戮鲁脳脭露炉碌梅脮没拢漏
     baseURL: 'http://localhost:4174',
-    // 追踪配置（失败时保留）
+    // 脳路脳脵脜盲脰脙拢篓脢搂掳脺脢卤卤拢脕么拢漏
     trace: 'retain-on-failure',
-    // 截图配置
+    // 陆脴脥录脜盲脰脙
     screenshot: 'only-on-failure',
-    // 视频录制
+    // 脢脫脝碌脗录脰脝
     video: 'retain-on-failure',
-    // 忽略HTTPS错误
+    // 潞枚脗脭HTTPS麓铆脦贸
     ignoreHTTPSErrors: true,
   },
 
-  // 测试项目配置
+  // 虏芒脢脭脧卯脛驴脜盲脰脙
   projects: [
     {
       name: 'chromium-desktop',
       use: { 
         ...devices['Desktop Chrome'],
-        // PWA测试需要的权限
+        // PWA虏芒脢脭脨猫脪陋碌脛脠篓脧脼
         permissions: ['notifications'],
-        // 模拟移动网络
+        // 脛拢脛芒脪脝露炉脥酶脗莽
         offline: false,
-        // 启用Service Worker
+        // 脝么脫脙Service Worker
         serviceWorkers: 'allow'
       },
     },
@@ -49,24 +49,24 @@ export default defineConfig({
       name: 'mobile-chrome',
       use: { 
         ...devices['Pixel 5'],
-        // 移动端PWA测试
+        // 脪脝露炉露脣PWA虏芒脢脭
         permissions: ['notifications'],
         serviceWorkers: 'allow'
       },
     },
-    // 离线模式测试
+    // 脌毛脧脽脛拢脢陆虏芒脢脭
     {
       name: 'offline-test',
       use: {
         ...devices['Desktop Chrome'],
-        // 模拟离线环境
+        // 脛拢脛芒脌毛脧脽禄路戮鲁
         offline: true,
         serviceWorkers: 'allow'
       },
     }
   ],
 
-  // 开发服务器配置
+  // 驴陋路垄路镁脦帽脝梅脜盲脰脙
   webServer: [
     {
       command: 'npm run dev',

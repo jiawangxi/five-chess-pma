@@ -1,19 +1,19 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * PWA功能专项测试
- * 测试Service Worker、缓存、离线功能等
+ * PWA鹿娄脛脺脳篓脧卯虏芒脢脭
+ * 虏芒脢脭Service Worker隆垄禄潞麓忙隆垄脌毛脧脽鹿娄脛脺碌脠
  */
 
-test.describe('PWA功能测试', () => {
+test.describe('PWA鹿娄脛脺虏芒脢脭', () => {
   
-  test('Service Worker注册', async ({ page }) => {
+  test('Service Worker脳垄虏谩', async ({ page }) => {
     await page.goto('/');
     
-    // 等待Service Worker注册
+    // 碌脠麓媒Service Worker脳垄虏谩
     await page.waitForFunction(() => 'serviceWorker' in navigator);
     
-    // 检查Service Worker是否注册成功
+    // 录矛虏茅Service Worker脢脟路帽脳垄虏谩鲁脡鹿娄
     const serviceWorkerReady = await page.evaluate(async () => {
       if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.ready;
@@ -23,23 +23,23 @@ test.describe('PWA功能测试', () => {
     });
     
     expect(serviceWorkerReady).toBe(true);
-    console.log('? Service Worker注册成功');
+    console.log('? Service Worker脳垄虏谩鲁脡鹿娄');
   });
 
-  test('缓存功能检查', async ({ page }) => {
+  test('禄潞麓忙鹿娄脛脺录矛虏茅', async ({ page }) => {
     await page.goto('/');
     
-    // 等待页面完全加载
+    // 碌脠麓媒脪鲁脙忙脥锚脠芦录脫脭脴
     await page.waitForLoadState('networkidle');
     
-    // 检查缓存是否可用
+    // 录矛虏茅禄潞麓忙脢脟路帽驴脡脫脙
     const cacheAvailable = await page.evaluate(async () => {
       return 'caches' in window;
     });
     
     expect(cacheAvailable).toBe(true);
     
-    // 检查是否有缓存条目
+    // 录矛虏茅脢脟路帽脫脨禄潞麓忙脤玫脛驴
     const cacheNames = await page.evaluate(async () => {
       if ('caches' in window) {
         return await caches.keys();
@@ -48,113 +48,113 @@ test.describe('PWA功能测试', () => {
     });
     
     expect(cacheNames.length).toBeGreaterThan(0);
-    console.log('? 发现缓存:', cacheNames);
+    console.log('? 路垄脧脰禄潞麓忙:', cacheNames);
   });
 
-  test('离线功能测试', async ({ page, context }) => {
-    // 首先正常加载页面建立缓存
+  test('脌毛脧脽鹿娄脛脺虏芒脢脭', async ({ page, context }) => {
+    // 脢脳脧脠脮媒鲁拢录脫脭脴脪鲁脙忙陆篓脕垄禄潞麓忙
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     
-    // 模拟离线状态
+    // 脛拢脛芒脌毛脧脽脳麓脤卢
     await context.setOffline(true);
     
-    // 重新加载页面，应该从缓存加载
+    // 脰脴脨脗录脫脭脴脪鲁脙忙拢卢脫娄赂脙麓脫禄潞麓忙录脫脭脴
     await page.reload();
     
-    // 检查页面是否仍能正常显示
+    // 录矛虏茅脪鲁脙忙脢脟路帽脠脭脛脺脮媒鲁拢脧脭脢戮
     await expect(page.locator('.game-container')).toBeVisible({ timeout: 10000 });
     
-    // 检查导航是否仍然工作
-    await page.click('text=设置');
-    await expect(page.locator('h1')).toContainText('游戏设置');
+    // 录矛虏茅碌录潞陆脢脟路帽脠脭脠禄鹿陇脳梅
+    await page.click('text=脡猫脰脙');
+    await expect(page.locator('h1')).toContainText('脫脦脧路脡猫脰脙');
     
-    // 恢复在线状态
+    // 禄脰赂麓脭脷脧脽脳麓脤卢
     await context.setOffline(false);
     
-    console.log('? 离线模式测试通过');
+    console.log('? 脌毛脧脽脛拢脢陆虏芒脢脭脥篓鹿媒');
   });
 
-  test('PWA缓存管理功能', async ({ page }) => {
+  test('PWA禄潞麓忙鹿脺脌铆鹿娄脛脺', async ({ page }) => {
     await page.goto('/settings');
     
-    // 检查PWA缓存管理部分是否显示
-    const cacheSection = page.locator('text=PWA缓存管理').first();
+    // 录矛虏茅PWA禄潞麓忙鹿脺脌铆虏驴路脰脢脟路帽脧脭脢戮
+    const cacheSection = page.locator('text=PWA禄潞麓忙鹿脺脌铆').first();
     await expect(cacheSection).toBeVisible();
     
-    // 检查缓存状态显示
-    await expect(page.locator('text=网络状态')).toBeVisible();
-    await expect(page.locator('text=缓存大小')).toBeVisible();
+    // 录矛虏茅禄潞麓忙脳麓脤卢脧脭脢戮
+    await expect(page.locator('text=脥酶脗莽脳麓脤卢')).toBeVisible();
+    await expect(page.locator('text=禄潞麓忙麓贸脨隆')).toBeVisible();
     
-    // 测试获取缓存报告
-    await page.click('text=缓存报告');
-    // 应该弹出缓存报告对话框
+    // 虏芒脢脭禄帽脠隆禄潞麓忙卤篓赂忙
+    await page.click('text=禄潞麓忙卤篓赂忙');
+    // 脫娄赂脙碌炉鲁枚禄潞麓忙卤篓赂忙露脭禄掳驴貌
     await page.waitForEvent('dialog');
     
-    console.log('? PWA缓存管理UI测试通过');
+    console.log('? PWA禄潞麓忙鹿脺脌铆UI虏芒脢脭脥篓鹿媒');
   });
 
-  test('音效设置功能', async ({ page }) => {
+  test('脪么脨搂脡猫脰脙鹿娄脛脺', async ({ page }) => {
     await page.goto('/settings');
     
-    // 测试音效开关
+    // 虏芒脢脭脪么脨搂驴陋鹿脴
     const soundToggle = page.locator('input[type="checkbox"]').first();
     await soundToggle.click();
     
-    // 测试音量滑块
+    // 虏芒脢脭脪么脕驴禄卢驴茅
     const volumeSlider = page.locator('input[type="range"]');
     await volumeSlider.fill('50');
     
-    // 检查音量显示是否更新
+    // 录矛虏茅脪么脕驴脧脭脢戮脢脟路帽赂眉脨脗
     await expect(page.locator('text=50%')).toBeVisible();
     
-    // 返回主页验证设置保存
-    await page.click('text=返回');
+    // 路碌禄脴脰梅脪鲁脩茅脰陇脡猫脰脙卤拢麓忙
+    await page.click('text=路碌禄脴');
     await page.goto('/settings');
     
-    // 验证设置是否保存
+    // 脩茅脰陇脡猫脰脙脢脟路帽卤拢麓忙
     const volumeValue = await volumeSlider.inputValue();
     expect(volumeValue).toBe('50');
     
-    console.log('? 音效设置测试通过');
+    console.log('? 脪么脨搂脡猫脰脙虏芒脢脭脥篓鹿媒');
   });
 
-  test('响应式设计测试', async ({ page }) => {
-    // 测试桌面视图
+  test('脧矛脫娄脢陆脡猫录脝虏芒脢脭', async ({ page }) => {
+    // 虏芒脢脭脳脌脙忙脢脫脥录
     await page.setViewportSize({ width: 1200, height: 800 });
     await page.goto('/');
     await page.screenshot({ path: 'screenshots/desktop-view.png' });
     
-    // 测试平板视图
+    // 虏芒脢脭脝陆掳氓脢脫脥录
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.reload();
     await page.screenshot({ path: 'screenshots/tablet-view.png' });
     
-    // 测试手机视图
+    // 虏芒脢脭脢脰禄煤脢脫脥录
     await page.setViewportSize({ width: 375, height: 667 });
     await page.reload();
     await page.screenshot({ path: 'screenshots/mobile-view.png' });
     
-    // 验证游戏棋盘在不同屏幕尺寸下都可见
+    // 脩茅脰陇脫脦脧路脝氓脜脤脭脷虏禄脥卢脝脕脛禄鲁脽麓莽脧脗露录驴脡录没
     await expect(page.locator('.game-board')).toBeVisible();
     
-    console.log('? 响应式设计测试通过');
+    console.log('? 脧矛脫娄脢陆脡猫录脝虏芒脢脭脥篓鹿媒');
   });
 
-  test('游戏状态持久化', async ({ page }) => {
+  test('脫脦脧路脳麓脤卢鲁脰戮脙禄炉', async ({ page }) => {
     await page.goto('/');
     
-    // 下一步棋
+    // 脧脗脪禄虏陆脝氓
     const firstCell = page.locator('.board-cell').first();
     await firstCell.click();
     
-    // 刷新页面
+    // 脣垄脨脗脪鲁脙忙
     await page.reload();
     
-    // 检查游戏状态是否保存（如果有自动保存功能）
-    // 这个测试可能需要根据实际的游戏保存逻辑调整
+    // 录矛虏茅脫脦脧路脳麓脤卢脢脟路帽卤拢麓忙拢篓脠莽鹿没脫脨脳脭露炉卤拢麓忙鹿娄脛脺拢漏
+    // 脮芒赂枚虏芒脢脭驴脡脛脺脨猫脪陋赂霉戮脻脢碌录脢碌脛脫脦脧路卤拢麓忙脗脽录颅碌梅脮没
     
-    console.log('? 游戏状态测试完成');
+    console.log('? 脫脦脧路脳麓脤卢虏芒脢脭脥锚鲁脡');
   });
 
 });

@@ -18,7 +18,7 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // 只处理 http/https 请求，忽略 chrome-extension 等其他协议
+  // 脰禄麓娄脌铆 http/https 脟毛脟贸拢卢潞枚脗脭 chrome-extension 碌脠脝盲脣没脨颅脪茅
   if (!event.request.url.startsWith('http')) {
     return;
   }
@@ -26,23 +26,23 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // 缓存命中，返回缓存内容
+        // 禄潞麓忙脙眉脰脨拢卢路碌禄脴禄潞麓忙脛脷脠脻
         if (response) {
           return response;
         }
 
         return fetch(event.request).then((response) => {
-          // 检查是否是有效响应
+          // 录矛虏茅脢脟路帽脢脟脫脨脨搂脧矛脫娄
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
 
-          // 克隆响应
+          // 驴脣脗隆脧矛脫娄
           const responseToCache = response.clone();
 
           caches.open(CACHE_NAME)
             .then((cache) => {
-              // 只缓存 http/https 请求
+              // 脰禄禄潞麓忙 http/https 脟毛脟贸
               if (event.request.url.startsWith('http')) {
                 cache.put(event.request, responseToCache);
               }
@@ -50,7 +50,7 @@ self.addEventListener('fetch', (event) => {
 
           return response;
         }).catch(() => {
-          // 网络请求失败，返回离线页面
+          // 脥酶脗莽脟毛脟贸脢搂掳脺拢卢路碌禄脴脌毛脧脽脪鲁脙忙
           if (event.request.destination === 'document') {
             return caches.match('/');
           }
