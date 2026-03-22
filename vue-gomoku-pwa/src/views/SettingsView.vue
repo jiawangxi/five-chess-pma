@@ -4,7 +4,7 @@
       <button @click="goBack" class="back-btn">
         ← 返回
       </button>
-      <h1>? 游戏设置</h1>
+      <h1>?? 游戏设置</h1>
     </header>
 
     <main class="settings-content">
@@ -182,6 +182,35 @@
             <span class="info-label">总使用量:</span>
             <span class="info-value">{{ storageInfo.totalSize }} KB</span>
           </div>
+        </div>
+      </section>
+
+      <section class="setting-section" v-if="cacheStatus.isSupported">
+        <h2>? PWA缓存管理</h2>
+        <div class="storage-info">
+          <div class="info-item">
+            <span class="info-label">网络状态:</span>
+            <span class="info-value">{{ cacheStatus.isOnline ? '? 在线' : '? 离线' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">缓存大小:</span>
+            <span class="info-value">{{ (cacheStatus.totalSize / 1024 / 1024).toFixed(2) }} MB</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">缓存数量:</span>
+            <span class="info-value">{{ cacheStatus.cacheNames.length }} 个</span>
+          </div>
+        </div>
+        <div class="setting-actions">
+          <button @click="getCacheReport" class="action-btn info-btn">
+            ? 缓存报告
+          </button>
+          <button @click="updatePWACache" class="action-btn update-btn">
+            ? 更新缓存
+          </button>
+          <button @click="clearPWACache" class="action-btn warning-btn">
+            ? 清理缓存
+          </button>
         </div>
       </section>
     </main>
@@ -596,6 +625,21 @@ export default {
 
 .danger-btn {
   background: #f44336;
+  color: white;
+}
+
+.info-btn {
+  background: #607d8b;
+  color: white;
+}
+
+.update-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.warning-btn {
+  background: #ff5722;
   color: white;
 }
 
