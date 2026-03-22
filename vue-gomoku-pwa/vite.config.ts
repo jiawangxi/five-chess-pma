@@ -25,7 +25,11 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        charset: 'utf8'
+        manualChunks: {
+          vue: ['vue'],
+          ai: ['src/utils/optimizedAI'],
+          utils: ['src/utils/gameStorage', 'src/utils/soundManager']
+        }
       }
     }
   }

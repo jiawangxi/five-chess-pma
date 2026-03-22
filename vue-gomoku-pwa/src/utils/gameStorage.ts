@@ -32,7 +32,7 @@ export class GameStorageService {
   private readonly STORAGE_KEY = 'gomoku_game_states'
   private readonly AUTO_SAVE_KEY = 'gomoku_auto_save'
   private readonly MAX_SAVE_SLOTS = 10
-  private autoSaveInterval: NodeJS.Timeout | null = null
+  private autoSaveInterval: number | null = null
 
   static getInstance(): GameStorageService {
     if (!GameStorageService.instance) {
@@ -54,7 +54,7 @@ export class GameStorageService {
     this.autoSaveInterval = setInterval(() => {
       const gameState = gameStateProvider()
       if (this.shouldAutoSave(gameState)) {
-        this.saveAutoSave(gameState)
+        this.saveAuto(gameState)
       }
     }, intervalMs)
   }
@@ -85,7 +85,7 @@ export class GameStorageService {
   /**
    * 保存自动存档
    */
-  saveAutoSave(gameState: GameState): void {
+  saveAuto(gameState: GameState): void {
     try {
       const autoSaveData = {
         ...gameState,
@@ -100,7 +100,7 @@ export class GameStorageService {
   /**
    * 加载自动存档
    */
-  loadAutoSave(): GameState | null {
+  loadAuto(): GameState | null {
     try {
       const data = localStorage.getItem(this.AUTO_SAVE_KEY)
       if (!data) return null
@@ -120,6 +120,13 @@ export class GameStorageService {
       console.warn('加载自动存档失败:', error)
       return null
     }
+  }
+
+  /**
+   * 加载自动存档（向后兼容）
+   */
+  loadAutoSave(): GameState | null {
+    return this.loadAuto()
   }
 
   /**

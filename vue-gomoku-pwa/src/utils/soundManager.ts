@@ -1,500 +1,276 @@
 /**
  * 游戏音效管理系统
- * 提供各种游戏音效的播放、控制和管理功能
+ * 基于 Web Audio API 实现程序化音效生成
+ * 避免外部音频文件依赖，提高加载效率
  */
 
-export interface SoundConfig {
-  volume: number // 0-1
-  enabled: boolean
-  backgroundMusic: boolean
-  soundEffects: boolean
-}
-
-export interface AudioAsset {
-  name: string
-  url: string
-  audio?: HTMLAudioElement
-  loaded: boolean
-  loop?: boolean
+// 音效配置接口
+interface SoundEffect {
+  frequency: number | number[]
+  duration: number
+  type: OscillatorType
   volume?: number
 }
 
+interface PlayOptions {
+  pitch?: number
+  volume?: number
+}
+
+// 音效管理器实现
 export class SoundManager {
-  private static instance: SoundManager
-  private config: SoundConfig
-  private audioAssets: Map<string, AudioAsset> = new Map()
-  private currentBgMusic: HTMLAudioElement | null = null
   private audioContext: AudioContext | null = null
-  private masterGainNode: GainNode | null = null
-
-  // 音效资源定义（使用Web Audio API生成的程序音效）
-  private readonly soundDefinitions = {
-    // 落子音效
-    placePiece: { frequency: 440, duration: 0.1, type: 'click' },
-    placeBlack: { frequency: 330, duration: 0.15, type: 'soft' },
-    placeWhite: { frequency: 550, duration: 0.15, type: 'soft' },
-    
-    // 游戏状态音效
-    gameWin: { frequency: [523, 659, 784], duration: 0.8, type: 'melody' },
-    gameStart: { frequency: 220, duration: 0.3, type: 'start' },
-    undoMove: { frequency: 200, duration: 0.2, type: 'undo' },
-    
-    // UI音效
-    buttonClick: { frequency: 300, duration: 0.1, type: 'ui' },
-    notification: { frequency: 800, duration: 0.2, type: 'alert' },
-    
-    // 背景音乐（程序生成的环境音）
-    ambientBg: { frequency: [110, 165, 220], duration: -1, type: 'ambient' }
-  }
-
-  static getInstance(): SoundManager {
-    if (!SoundManager.instance) {
-      SoundManager.instance = new SoundManager()
+  private isEnabled = true
+  private backgroundMusicEnabled = true
+  private backgroundAudio: AudioBufferSourceNode | null = null
+  private masterGain: GainNode | null = null
+  
+  // 音效配置 - 基于DTMF音调的棋类游戏音效
+  private soundConfig: Record<string, SoundEffect> = {
+    // 黑棋落子音效 - 低沉稳重 (C5)
+    placeBlack: {
+      frequency: 523.25,
+      duration: 0.15,
+      type: 'sine' as OscillatorType,
+      volume: 0.4
+    },
+    // 白棋落子音效 - 清脆明亮 (G5) 
+    placeWhite: {
+      frequency: 783.99,
+      duration: 0.15,
+      type: 'sine' as OscillatorType,
+      volume: 0.4
+    },
+    // 游戏胜利音效 - 上行三和弦
+    gameWin: {
+      frequency: [523.25, 659.25, 783.99],  // C-E-G
+      duration: 0.8,
+      type: 'sine' as OscillatorType,
+      volume: 0.6
+    },
+    // 按钮点击音效
+    buttonClick: {
+      frequency: 800,
+      duration: 0.1,
+      type: 'square' as OscillatorType,
+      volume: 0.3
+    },
+    // 悔棋音效
+    undo: {
+      frequency: [659.25, 523.25],  // E-C下行
+      duration: 0.3,
+      type: 'triangle' as OscillatorType,
+      volume: 0.4
+    },
+    // 游戏开始音效
+    gameStart: {
+      frequency: [261.63, 329.63, 392.00], // C-E-G上行
+      duration: 0.6,
+      type: 'sine' as OscillatorType,
+      volume: 0.5
+    },
+    // 错误音效
+    error: {
+      frequency: 200,
+      duration: 0.2,
+      type: 'sawtooth' as OscillatorType,
+      volume: 0.3
     }
-    return SoundManager.instance
   }
 
-  constructor() {
-    this.config = this.loadConfig()
-    this.initAudioContext()
-    this.generateAudioAssets()
-  }
-
-  /**
-   * 初始化音频上下文
-   */
-  private initAudioContext() {
+  // 初始化音效系统
+  async init(): Promise<void> {
     try {
+      // 创建AudioContext
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-      this.masterGainNode = this.audioContext.createGain()
-      this.masterGainNode.connect(this.audioContext.destination)
-      this.updateMasterVolume()
+      
+      // 创建主音量控制
+      this.masterGain = this.audioContext.createGain()
+      this.masterGain.connect(this.audioContext.destination)
+      this.masterGain.gain.value = 0.3 // 设置整体音量
+
+      console.log('? 音效系统初始化成功')
     } catch (error) {
-      console.warn('音频上下文初始化失败:', error)
+      console.error('音效系统初始化失败:', error)
     }
   }
 
-  /**
-   * 生成程序音效
-   */
-  private generateAudioAssets() {
-    if (!this.audioContext) return
+  // 播放音效
+  playSound(name: string, options: PlayOptions = {}): void {
+    if (!this.isEnabled || !this.audioContext || !this.masterGain) {
+      return
+    }
 
-    Object.entries(this.soundDefinitions).forEach(([name, config]) => {
-      const audioBuffer = this.generateSound(config)
-      if (audioBuffer) {
-        this.audioAssets.set(name, {
-          name,
-          url: '',
-          audio: this.createAudioFromBuffer(audioBuffer),
-          loaded: true,
-          loop: config.duration === -1,
-          volume: config.volume || 1
-        })
+    const config = this.soundConfig[name]
+    if (!config) {
+      console.warn(`未找到音效配置: ${name}`)
+      return
+    }
+
+    const { pitch = 1, volume = 1 } = options
+    const finalVolume = (config.volume || 0.5) * volume
+
+    try {
+      if (Array.isArray(config.frequency)) {
+        // 播放和弦或序列音效
+        this.playChord(config.frequency, config, finalVolume, pitch)
+      } else {
+        // 播放单音
+        this.playTone(config.frequency, config, finalVolume, pitch)
       }
+    } catch (error) {
+      console.error(`播放音效失败 (${name}):`, error)
+    }
+  }
+
+  // 播放单音
+  private playTone(frequency: number, config: SoundEffect, volume: number, pitch: number): void {
+    if (!this.audioContext || !this.masterGain) return
+
+    const oscillator = this.audioContext.createOscillator()
+    const gainNode = this.audioContext.createGain()
+    
+    oscillator.type = config.type
+    oscillator.frequency.setValueAtTime(frequency * pitch, this.audioContext.currentTime)
+    
+    // 连接音频节点
+    oscillator.connect(gainNode)
+    gainNode.connect(this.masterGain)
+    
+    // 设置音量包络（避免爆音）
+    const now = this.audioContext.currentTime
+    gainNode.gain.setValueAtTime(0, now)
+    gainNode.gain.linearRampToValueAtTime(volume, now + 0.01) // 快速淡入
+    gainNode.gain.exponentialRampToValueAtTime(0.01, now + config.duration) // 自然衰减
+    
+    // 播放和停止
+    oscillator.start(now)
+    oscillator.stop(now + config.duration)
+  }
+
+  // 播放和弦
+  private playChord(frequencies: number[], config: SoundEffect, volume: number, pitch: number): void {
+    if (!this.audioContext || !this.masterGain) return
+
+    const chordVolume = volume / frequencies.length // 避免音量叠加过大
+
+    frequencies.forEach((freq, index) => {
+      setTimeout(() => {
+        this.playTone(freq, config, chordVolume, pitch)
+      }, index * 150) // 和弦音符间隔150ms
     })
   }
 
-  /**
-   * 根据配置生成音效
-   */
-  private generateSound(config: any): AudioBuffer | null {
-    if (!this.audioContext) return null
-
-    const sampleRate = this.audioContext.sampleRate
-    const duration = config.duration > 0 ? config.duration : 2 // 背景音乐2秒循环
-    const length = sampleRate * duration
-    const buffer = this.audioContext.createBuffer(1, length, sampleRate)
-    const data = buffer.getChannelData(0)
-
-    switch (config.type) {
-      case 'click':
-        this.generateClick(data, config.frequency, sampleRate)
-        break
-      case 'soft':
-        this.generateSoftTone(data, config.frequency, sampleRate, duration)
-        break
-      case 'melody':
-        this.generateMelody(data, config.frequency, sampleRate, duration)
-        break
-      case 'start':
-        this.generateStartSound(data, config.frequency, sampleRate, duration)
-        break
-      case 'undo':
-        this.generateUndoSound(data, config.frequency, sampleRate, duration)
-        break
-      case 'ui':
-        this.generateUISound(data, config.frequency, sampleRate)
-        break
-      case 'alert':
-        this.generateAlert(data, config.frequency, sampleRate, duration)
-        break
-      case 'ambient':
-        this.generateAmbient(data, config.frequency, sampleRate, duration)
-        break
+  // 播放背景音乐（程序化生成）
+  playBackgroundMusic(): void {
+    if (!this.backgroundMusicEnabled || !this.audioContext || !this.masterGain) {
+      return
     }
-
-    return buffer
-  }
-
-  /**
-   * 生成点击音效
-   */
-  private generateClick(data: Float32Array, frequency: number, sampleRate: number) {
-    for (let i = 0; i < data.length; i++) {
-      const t = i / sampleRate
-      const envelope = Math.exp(-t * 50) // 快速衰减
-      data[i] = Math.sin(2 * Math.PI * frequency * t) * envelope * 0.3
-    }
-  }
-
-  /**
-   * 生成柔和音效（落子音）
-   */
-  private generateSoftTone(data: Float32Array, frequency: number, sampleRate: number, duration: number) {
-    for (let i = 0; i < data.length; i++) {
-      const t = i / sampleRate
-      const envelope = Math.sin(Math.PI * t / duration) * Math.exp(-t * 3)
-      const harmonics = Math.sin(2 * Math.PI * frequency * t) * 0.7 +
-                       Math.sin(2 * Math.PI * frequency * 2 * t) * 0.3
-      data[i] = harmonics * envelope * 0.4
-    }
-  }
-
-  /**
-   * 生成获胜旋律
-   */
-  private generateMelody(data: Float32Array, frequencies: number[], sampleRate: number, duration: number) {
-    const noteLength = duration / frequencies.length
-    for (let i = 0; i < data.length; i++) {
-      const t = i / sampleRate
-      const noteIndex = Math.floor(t / noteLength)
-      const noteTime = t % noteLength
-      const frequency = frequencies[noteIndex] || frequencies[frequencies.length - 1]
-      
-      const envelope = Math.sin(Math.PI * noteTime / noteLength) * 0.8
-      data[i] = Math.sin(2 * Math.PI * frequency * noteTime) * envelope * 0.5
-    }
-  }
-
-  /**
-   * 生成开始游戏音效
-   */
-  private generateStartSound(data: Float32Array, frequency: number, sampleRate: number, duration: number) {
-    for (let i = 0; i < data.length; i++) {
-      const t = i / sampleRate
-      const freq = frequency * (1 + t * 2) // 上升音调
-      const envelope = (1 - t / duration) * Math.sin(Math.PI * t / duration)
-      data[i] = Math.sin(2 * Math.PI * freq * t) * envelope * 0.4
-    }
-  }
-
-  /**
-   * 生成悔棋音效
-   */
-  private generateUndoSound(data: Float32Array, frequency: number, sampleRate: number, duration: number) {
-    for (let i = 0; i < data.length; i++) {
-      const t = i / sampleRate
-      const freq = frequency * (2 - t * 2) // 下降音调
-      const envelope = Math.exp(-t * 8) * Math.sin(Math.PI * t / duration)
-      data[i] = Math.sin(2 * Math.PI * freq * t) * envelope * 0.3
-    }
-  }
-
-  /**
-   * 生成UI音效
-   */
-  private generateUISound(data: Float32Array, frequency: number, sampleRate: number) {
-    for (let i = 0; i < data.length; i++) {
-      const t = i / sampleRate
-      const envelope = Math.exp(-t * 30)
-      data[i] = Math.sin(2 * Math.PI * frequency * t) * envelope * 0.2
-    }
-  }
-
-  /**
-   * 生成提醒音效
-   */
-  private generateAlert(data: Float32Array, frequency: number, sampleRate: number, duration: number) {
-    for (let i = 0; i < data.length; i++) {
-      const t = i / sampleRate
-      const beep = Math.sin(2 * Math.PI * frequency * t)
-      const modulation = Math.sin(2 * Math.PI * 5 * t) * 0.5 + 0.5 // 5Hz调制
-      const envelope = Math.sin(Math.PI * t / duration)
-      data[i] = beep * modulation * envelope * 0.4
-    }
-  }
-
-  /**
-   * 生成环境音乐
-   */
-  private generateAmbient(data: Float32Array, frequencies: number[], sampleRate: number, duration: number) {
-    for (let i = 0; i < data.length; i++) {
-      const t = i / sampleRate
-      let sample = 0
-      
-      frequencies.forEach((freq, index) => {
-        const phase = 2 * Math.PI * freq * t + index * Math.PI / 3
-        const volume = 0.15 / frequencies.length
-        sample += Math.sin(phase) * volume
-      })
-      
-      // 添加轻微的噪音纹理
-      const noise = (Math.random() - 0.5) * 0.02
-      data[i] = sample + noise
-    }
-  }
-
-  /**
-   * 从AudioBuffer创建音频元素
-   */
-  private createAudioFromBuffer(buffer: AudioBuffer): HTMLAudioElement {
-    // 创建一个虚拟的音频元素，实际播放使用Web Audio API
-    const audio = new Audio()
-    audio.preload = 'auto'
-    return audio
-  }
-
-  /**
-   * 播放音效
-   */
-  async playSound(soundName: string, options?: { volume?: number; pitch?: number }): Promise<void> {
-    if (!this.config.enabled || !this.config.soundEffects) return
-    if (!this.audioContext || !this.masterGainNode) return
-
-    const asset = this.audioAssets.get(soundName)
-    if (!asset || !asset.loaded) return
 
     try {
-      // 确保音频上下文处于运行状态
-      if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume()
-      }
-
-      const buffer = await this.getSoundBuffer(soundName)
-      if (!buffer) return
-
-      // 创建音频源
-      const source = this.audioContext.createBufferSource()
-      const gainNode = this.audioContext.createGain()
+      this.stopBackgroundMusic() // 停止当前背景音乐
       
-      source.buffer = buffer
-      
-      // 设置音量
-      const volume = (options?.volume ?? asset.volume ?? 1) * this.config.volume
-      gainNode.gain.value = volume
-
-      // 设置音调（可选）
-      if (options?.pitch) {
-        source.playbackRate.value = options.pitch
-      }
-
-      // 连接音频节点
-      source.connect(gainNode)
-      gainNode.connect(this.masterGainNode)
-
-      // 播放
-      source.start()
-
-      console.log(`? 播放音效: ${soundName}`)
-    } catch (error) {
-      console.warn(`音效播放失败 (${soundName}):`, error)
-    }
-  }
-
-  /**
-   * 获取音效缓冲区
-   */
-  private async getSoundBuffer(soundName: string): Promise<AudioBuffer | null> {
-    if (!this.audioContext) return null
-
-    // 重新生成音效缓冲区
-    const config = this.soundDefinitions[soundName as keyof typeof this.soundDefinitions]
-    if (!config) return null
-
-    return this.generateSound(config)
-  }
-
-  /**
-   * 播放背景音乐
-   */
-  async playBackgroundMusic(): Promise<void> {
-    if (!this.config.enabled || !this.config.backgroundMusic) return
-    if (!this.audioContext || !this.masterGainNode) return
-
-    try {
-      if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume()
-      }
-
-      const buffer = await this.getSoundBuffer('ambientBg')
-      if (!buffer) return
-
-      // 停止当前背景音乐
-      this.stopBackgroundMusic()
-
-      // 创建循环音频源
-      const source = this.audioContext.createBufferSource()
-      const gainNode = this.audioContext.createGain()
-      
-      source.buffer = buffer
-      source.loop = true
-      
-      gainNode.gain.value = this.config.volume * 0.3 // 背景音乐音量较低
-      
-      source.connect(gainNode)
-      gainNode.connect(this.masterGainNode)
-      
-      source.start()
-      
-      // 保存引用以便控制
-      this.currentBgMusic = source as any
+      // 生成简单的背景音乐
+      this.generateBackgroundMusic()
       
       console.log('? 开始播放背景音乐')
     } catch (error) {
-      console.warn('背景音乐播放失败:', error)
+      console.error('播放背景音乐失败:', error)
     }
   }
 
-  /**
-   * 停止背景音乐
-   */
-  stopBackgroundMusic(): void {
-    if (this.currentBgMusic) {
-      try {
-        (this.currentBgMusic as any).stop()
-      } catch (error) {
-        // 忽略停止时的错误
+  // 生成程序化背景音乐
+  private generateBackgroundMusic(): void {
+    if (!this.audioContext || !this.masterGain) return
+
+    // 简单的C大调音阶循环
+    const melody = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25] // C D E F G A B C
+    const beatDuration = 1.0 // 每个音符1秒
+    
+    const playMelodyLoop = (startTime: number) => {
+      melody.forEach((frequency, index) => {
+        const noteTime = startTime + index * beatDuration
+        
+        const oscillator = this.audioContext!.createOscillator()
+        const gainNode = this.audioContext!.createGain()
+        
+        oscillator.type = 'sine'
+        oscillator.frequency.setValueAtTime(frequency * 0.5, noteTime) // 低八度
+        
+        oscillator.connect(gainNode)
+        gainNode.connect(this.masterGain!)
+        
+        // 设置音量包络
+        gainNode.gain.setValueAtTime(0, noteTime)
+        gainNode.gain.linearRampToValueAtTime(0.05, noteTime + 0.1)  // 淡入
+        gainNode.gain.exponentialRampToValueAtTime(0.01, noteTime + beatDuration - 0.1) // 淡出
+        
+        oscillator.start(noteTime)
+        oscillator.stop(noteTime + beatDuration)
+      })
+      
+      // 循环播放
+      if (this.backgroundMusicEnabled) {
+        const nextLoopTime = startTime + melody.length * beatDuration
+        setTimeout(() => {
+          if (this.backgroundMusicEnabled && this.audioContext) {
+            playMelodyLoop(this.audioContext.currentTime)
+          }
+        }, (nextLoopTime - this.audioContext!.currentTime) * 1000)
       }
-      this.currentBgMusic = null
-      console.log('? 停止背景音乐')
     }
+    
+    playMelodyLoop(this.audioContext.currentTime)
   }
 
-  /**
-   * 更新主音量
-   */
-  private updateMasterVolume(): void {
-    if (this.masterGainNode) {
-      this.masterGainNode.gain.value = this.config.volume
+  // 停止背景音乐
+  stopBackgroundMusic(): void {
+    this.backgroundMusicEnabled = false
+    if (this.backgroundAudio) {
+      try {
+        this.backgroundAudio.stop()
+        this.backgroundAudio = null
+      } catch (error) {
+        // 忽略停止错误
+      }
     }
+    console.log('? 停止背景音乐')
   }
 
-  /**
-   * 设置音量
-   */
-  setVolume(volume: number): void {
-    this.config.volume = Math.max(0, Math.min(1, volume))
-    this.updateMasterVolume()
-    this.saveConfig()
-  }
-
-  /**
-   * 启用/禁用音效
-   */
+  // 设置音效开关
   setEnabled(enabled: boolean): void {
-    this.config.enabled = enabled
+    this.isEnabled = enabled
+    console.log(`? 音效${enabled ? '开启' : '关闭'}`)
+  }
+
+  // 设置背景音乐开关
+  setBackgroundMusicEnabled(enabled: boolean): void {
+    this.backgroundMusicEnabled = enabled
     if (!enabled) {
       this.stopBackgroundMusic()
-    }
-    this.saveConfig()
-  }
-
-  /**
-   * 启用/禁用背景音乐
-   */
-  setBackgroundMusicEnabled(enabled: boolean): void {
-    this.config.backgroundMusic = enabled
-    if (enabled) {
-      this.playBackgroundMusic()
     } else {
-      this.stopBackgroundMusic()
-    }
-    this.saveConfig()
-  }
-
-  /**
-   * 启用/禁用音效
-   */
-  setSoundEffectsEnabled(enabled: boolean): void {
-    this.config.soundEffects = enabled
-    this.saveConfig()
-  }
-
-  /**
-   * 获取当前配置
-   */
-  getConfig(): SoundConfig {
-    return { ...this.config }
-  }
-
-  /**
-   * 加载音效配置
-   */
-  private loadConfig(): SoundConfig {
-    try {
-      const saved = localStorage.getItem('gomoku_sound_config')
-      if (saved) {
-        return { ...this.getDefaultConfig(), ...JSON.parse(saved) }
-      }
-    } catch (error) {
-      console.warn('加载音效配置失败:', error)
-    }
-    return this.getDefaultConfig()
-  }
-
-  /**
-   * 保存音效配置
-   */
-  private saveConfig(): void {
-    try {
-      localStorage.setItem('gomoku_sound_config', JSON.stringify(this.config))
-    } catch (error) {
-      console.warn('保存音效配置失败:', error)
+      this.playBackgroundMusic()
     }
   }
 
-  /**
-   * 获取默认配置
-   */
-  private getDefaultConfig(): SoundConfig {
-    return {
-      volume: 0.7,
-      enabled: true,
-      backgroundMusic: true,
-      soundEffects: true
-    }
-  }
-
-  /**
-   * 预加载所有音效（用户交互后调用）
-   */
-  async preloadSounds(): Promise<void> {
-    if (!this.audioContext) return
-
-    try {
-      if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume()
-      }
-      console.log('? 音效系统已就绪')
-    } catch (error) {
-      console.warn('音效预加载失败:', error)
-    }
-  }
-
-  /**
-   * 获取音效系统状态
-   */
+  // 获取音效状态
   getStatus() {
     return {
-      initialized: !!this.audioContext,
-      contextState: this.audioContext?.state,
-      assetsLoaded: this.audioAssets.size,
-      config: this.config,
-      backgroundMusicPlaying: !!this.currentBgMusic
+      isEnabled: this.isEnabled,
+      backgroundMusicEnabled: this.backgroundMusicEnabled,
+      contextState: this.audioContext?.state || 'closed'
     }
+  }
+
+  // 清理资源
+  cleanup(): void {
+    this.stopBackgroundMusic()
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close()
+    }
+    console.log('? 音效系统已清理')
   }
 }
 
 // 导出单例实例
-export const soundManager = SoundManager.getInstance()
+export const soundManager = new SoundManager()
