@@ -37,3 +37,26 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Build artifacts
+dist-*
+*.stats.json
+build-stats.json
+
+# Environment variables (keep .env.example)
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# PWA
+sw.js.map
+workbox-*.js.map
+
+# Cache directories
+.cache
+.parcel-cache
+
+# Deployment
+deploy.log
+netlify.toml
