@@ -193,27 +193,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { gameStorage } from '../utils/gameStorage'
 import { soundManager } from '../utils/soundManager'
-
-interface Settings {
-  // 音效设置
-  soundEnabled: boolean
-  backgroundMusicEnabled: boolean
-  volume: number
-  
-  // AI设置
-  defaultAIDifficulty: string
-  showAIStats: boolean
-  
-  // 游戏设置
-  autoSaveEnabled: boolean
-  autoSaveInterval: number
-  winAnimationEnabled: boolean
-  
-  // 显示设置
-  theme: string
-  showBoardGrid: boolean
-  showCoordinates: boolean
-}
+import { gameSettings, settingsManager } from '../utils/settingsManager'
 
 export default {
   name: 'SettingsView',
@@ -221,23 +201,8 @@ export default {
     const router = useRouter()
     const fileInput = ref<HTMLInputElement>()
     
-    // 默认设置
-    const defaultSettings: Settings = {
-      soundEnabled: true,
-      backgroundMusicEnabled: true,
-      volume: 70,
-      defaultAIDifficulty: 'hard',
-      showAIStats: true,
-      autoSaveEnabled: true,
-      autoSaveInterval: 15,
-      winAnimationEnabled: true,
-      theme: 'auto',
-      showBoardGrid: true,
-      showCoordinates: false
-    }
-
-    // 当前设置
-    const settings = reactive<Settings>({ ...defaultSettings })
+    // 使用全局设置状态
+    const settings = gameSettings
     
     // 存储信息
     const storageInfo = reactive({
@@ -246,27 +211,7 @@ export default {
       totalSize: 0
     })
 
-    // 加载设置
-    const loadSettings = () => {
-      try {
-        const saved = localStorage.getItem('gomoku_settings')
-        if (saved) {
-          const savedSettings = JSON.parse(saved)
-          Object.assign(settings, { ...defaultSettings, ...savedSettings })
-        }
-      } catch (error) {
-        console.error('加载设置失败:', error)
-      }
-    }
-
-    // 保存设置
-    const saveSettings = () => {
-      try {
-        localStorage.setItem('gomoku_settings', JSON.stringify(settings))
-      } catch (error) {
-        console.error('保存设置失败:', error)
-      }
-    }
+    // 设置已由全局设置管理器自动处理
 
     // 更新存储信息
     const updateStorageInfo = () => {
@@ -277,57 +222,35 @@ export default {
     }
 
     // 音效设置更新
+    // 设置更新函数 - 现在由全局设置管理器自动处理保存和应用
     const updateSoundSettings = () => {
-      soundManager.setEnabled(settings.soundEnabled)
-      saveSettings()
+      // 音效设置会由settingsManager自动应用
     }
 
     const updateMusicSettings = () => {
-      soundManager.setBackgroundMusicEnabled(settings.backgroundMusicEnabled)
-      saveSettings()
+      // 音乐设置会由settingsManager自动应用
     }
 
     const updateVolumeSettings = () => {
-      // 更新音量设置
-      saveSettings()
+      // 音量设置会由settingsManager自动应用
     }
 
-    // AI设置更新
     const updateAISettings = () => {
-      saveSettings()
+      // AI设置会自动保存
     }
 
-    // 游戏设置更新
     const updateGameSettings = () => {
-      saveSettings()
+      // 游戏设置会自动保存
     }
 
-    // 主题设置更新
     const updateThemeSettings = () => {
-      applyTheme(settings.theme)
-      saveSettings()
+      // 主题设置会由settingsManager自动应用
     }
 
-    // 显示设置更新
     const updateDisplaySettings = () => {
-      saveSettings()
+      // 显示设置会自动保存
     }
 
-    // 应用主题
-    const applyTheme = (theme: string) => {
-      const html = document.documentElement
-      html.classList.remove('light-theme', 'dark-theme')
-      
-      if (theme === 'light') {
-        html.classList.add('light-theme')
-      } else if (theme === 'dark') {
-        html.classList.add('dark-theme')
-      } else {
-        // 自动模式根据系统设置
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-        html.classList.add(prefersDark ? 'dark-theme' : 'light-theme')
-      }
-    }
 
     // 导出设置
     const exportSettings = () => {
@@ -361,12 +284,12 @@ export default {
       reader.onload = (e) => {
         try {
           const importedSettings = JSON.parse(e.target?.result as string)
-          Object.assign(settings, { ...defaultSettings, ...importedSettings })
-          saveSettings()
-          soundManager.playSound('buttonClick')
+          Object.assign(settings, importedSettings)
+          // 设置会自动保存和应用
+          settingsManager.playSound('buttonClick')
         } catch (error) {
           console.error('导入设置失败:', error)
-          soundManager.playSound('error')
+          settingsManager.playSound('error')
         }
       }
       reader.readAsText(file)
@@ -375,9 +298,8 @@ export default {
     // 重置设置
     const resetSettings = () => {
       if (confirm('确定要恢复默认设置吗？这将清除所有自定义配置。')) {
-        Object.assign(settings, defaultSettings)
-        saveSettings()
-        soundManager.playSound('buttonClick')
+        settingsManager.resetToDefaults()
+        settingsManager.playSound('buttonClick')
       }
     }
 
@@ -386,10 +308,9 @@ export default {
       if (confirm('?? 警告：这将删除所有游戏数据和设置，包括存档、历史记录等。确定要继续吗？')) {
         if (confirm('? 最后确认：所有数据将被永久删除，无法恢复！')) {
           gameStorage.clearAllData()
-          localStorage.removeItem('gomoku_settings')
-          Object.assign(settings, defaultSettings)
+          settingsManager.resetToDefaults()
           updateStorageInfo()
-          soundManager.playSound('buttonClick')
+          settingsManager.playSound('buttonClick')
           alert('? 所有数据已清除完成')
         }
       }
@@ -402,9 +323,8 @@ export default {
 
     // 初始化
     onMounted(() => {
-      loadSettings()
       updateStorageInfo()
-      applyTheme(settings.theme)
+      // 设置已由全局设置管理器处理，主题也会自动应用
     })
 
     return {

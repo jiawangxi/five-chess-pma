@@ -110,11 +110,12 @@
 </template>
 
 <script lang="ts">
-import { ref, reactive, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
 import { gameStorage } from '../utils/gameStorage'
 import { soundManager } from '../utils/soundManager'
 import { GomokuAI } from '../utils/optimizedAI'
+import { gameSettings, settingsManager } from '../utils/settingsManager'
 
 interface GameMove {
   row: number
@@ -213,7 +214,13 @@ export default {
       nodesSearched: 0,
       depth: 0
     })
-    const aiDifficulty: Ref<AIDifficulty> = ref('hard')
+    // 使用全局设置中的AI难度
+    const aiDifficulty = computed({
+      get: () => gameSettings.defaultAIDifficulty as AIDifficulty,
+      set: (value: AIDifficulty) => {
+        gameSettings.defaultAIDifficulty = value
+      }
+    })
     
     // AI实例
     let aiInstance: GomokuAI | null = null
@@ -259,14 +266,14 @@ export default {
 
         // 播放AI落子音效
         const soundName = player === 'black' ? 'placeBlack' : 'placeWhite'
-        soundManager.playSound(soundName, { pitch: 0.9 }) // AI音效音调稍低
+        settingsManager.playSound(soundName) // AI音效
 
         // 检查获胜
         const gameWinner = checkWinner(row, col, player)
         if (gameWinner) {
           winner.value = gameWinner
           // 播放获胜音效
-          setTimeout(() => soundManager.playSound('gameWin'), 200)
+          setTimeout(() => settingsManager.playSound('gameWin'), 200)
           return
         }
 
@@ -286,7 +293,7 @@ export default {
     // 改变AI难度
     const changeAIDifficulty = () => {
       initializeAI()
-      soundManager.playSound('buttonClick')
+      settingsManager.playSound('buttonClick')
     }
 
     // 降级AI逻辑（备用）
@@ -309,12 +316,12 @@ export default {
 
       // 播放落子音效
       const soundName = currentPlayer.value === 'black' ? 'placeBlack' : 'placeWhite'
-      soundManager.playSound(soundName)
+      settingsManager.playSound(soundName)
 
       const gameWinner = checkWinner(row, col, currentPlayer.value)
       if (gameWinner) {
         winner.value = gameWinner
-        setTimeout(() => soundManager.playSound('gameWin'), 200)
+        setTimeout(() => settingsManager.playSound('gameWin'), 200)
         return
       }
 
@@ -335,14 +342,14 @@ export default {
 
       // 播放落子音效
       const soundName = player === 'black' ? 'placeBlack' : 'placeWhite'
-      soundManager.playSound(soundName)
+      settingsManager.playSound(soundName)
 
       // 检查获胜
       const gameWinner = checkWinner(row, col, player)
       if (gameWinner) {
         winner.value = gameWinner
         // 播放获胜音效
-        setTimeout(() => soundManager.playSound('gameWin'), 200)
+        setTimeout(() => settingsManager.playSound('gameWin'), 200)
         return
       }
 
@@ -374,7 +381,7 @@ export default {
       lastMoveTime.value = Date.now()
 
       // 播放开始音效
-      soundManager.playSound('gameStart')
+      settingsManager.playSound('gameStart')
 
       // 清除自动存档
       gameStorage.clearAutoSave()
@@ -405,13 +412,13 @@ export default {
       currentPlayer.value = moves.value.length % 2 === 0 ? 'black' : 'white'
       
       // 播放悔棋音效
-      soundManager.playSound('undo')
+      settingsManager.playSound('undo')
     }
 
     // 切换AI
     const toggleAI = () => {
       aiEnabled.value = !aiEnabled.value
-      soundManager.playSound('buttonClick')
+      settingsManager.playSound('buttonClick')
     }
 
     // 切换音效
@@ -419,7 +426,7 @@ export default {
       soundEnabled.value = !soundEnabled.value
       soundManager.setEnabled(soundEnabled.value)
       if (soundEnabled.value) {
-        soundManager.playSound('buttonClick')
+        settingsManager.playSound('buttonClick')
       }
     }
 
@@ -432,7 +439,7 @@ export default {
         soundManager.stopBackgroundMusic()
       }
       if (soundEnabled.value) {
-        soundManager.playSound('buttonClick')
+        settingsManager.playSound('buttonClick')
       }
     }
 
