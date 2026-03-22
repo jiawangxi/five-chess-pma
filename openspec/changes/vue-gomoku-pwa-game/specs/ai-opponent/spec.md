@@ -1,23 +1,22 @@
-## ADDED Requirements
-
-### Requirement: AI 难度级别
-系统 SHALL 提供多个 AI 难度级别供玩家选择。
-
-#### Scenario: 简单难度
-- **WHEN** 选择简单难度 AI
-- **THEN** AI 使用基础评估函数，思考时间 < 1 秒
-
-#### Scenario: 中等难度
-- **WHEN** 选择中等难度 AI
-- **THEN** AI 使用 3-4 层 minimax 搜索，思考时间 < 3 秒
-
-#### Scenario: 困难难度
-- **WHEN** 选择困难难度 AI
-- **THEN** AI 使用 5-6 层 minimax 搜索，思考时间 < 5 秒
-
-### Requirement: 智能落子策略
-系统 SHALL 实现基于 minimax 算法的 AI 决策。
-
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="锟斤拷锟斤拷锟斤拷 PWA 锟斤拷戏 - 支锟斤拷锟斤拷锟斤拷锟斤拷戏锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷应锟斤拷">
+    <title>锟斤拷锟斤拷锟斤拷锟绞? - 锟斤拷锟斤拷AI锟斤拷战锟斤拷戏</title>
+    <script type="module" crossorigin src="/assets/index-BCrRkQcx.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vue-DOyB2oMm.js">
+    <link rel="modulepreload" crossorigin href="/assets/utils-D_jum9if.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-Bme84wCY.css">
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
 #### Scenario: 攻防平衡
 - **WHEN** AI 分析棋盘局势
 - **THEN** 综合考虑攻击机会和防守需求，选择最优落子位置
