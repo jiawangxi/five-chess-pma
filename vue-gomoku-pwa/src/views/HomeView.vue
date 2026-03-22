@@ -80,6 +80,17 @@
         <button @click="toggleSound" class="btn btn-sound" :class="{ active: soundEnabled }">
           {{ soundEnabled ? '🔊' : '🔇' }} 音效
         </button>
+        <router-link to="/settings" class="btn btn-settings">
+          ⚙️ 设置
+        </router-link>
+      </div>
+      <div class="secondary-controls">
+        <router-link to="/tutorial" class="btn btn-secondary">
+          📚 教程
+        </router-link>
+        <router-link to="/history" class="btn btn-secondary">
+          📜 记录
+        </router-link>
         <button @click="toggleBackgroundMusic" class="btn btn-music" :class="{ active: backgroundMusicEnabled }">
           {{ backgroundMusicEnabled ? '🎵' : '🎼' }} 音乐
         </button>
@@ -723,6 +734,14 @@ export default {
 }
 
 .control-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.secondary-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;

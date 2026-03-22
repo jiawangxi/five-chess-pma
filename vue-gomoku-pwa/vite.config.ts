@@ -26,11 +26,20 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vue: ['vue'],
-          ai: ['src/utils/optimizedAI'],
-          utils: ['src/utils/gameStorage', 'src/utils/soundManager']
+          // Vue 核心
+          vue: ['vue', 'vue-router'],
+          // AI 引擎
+          'ai-engine': ['./src/utils/optimizedAI'],
+          // 工具模块  
+          utils: ['./src/utils/gameStorage', './src/utils/soundManager']
         }
       }
-    }
+    },
+    // 构建优化
+    target: 'es2015',
+    minify: 'esbuild',
+    // 资源优化
+    assetsInlineLimit: 4096,
+    cssCodeSplit: true
   }
 })
