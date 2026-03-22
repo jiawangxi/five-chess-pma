@@ -28,6 +28,12 @@
         <div v-if="winner" class="winner-announcement">
           🎉 {{ winner === 'black' ? '黑子获胜!' : '白子获胜!' }}
         </div>
+        <div v-if="aiThinking && !winner" class="ai-thinking">
+          🤖 AI思考中...
+        </div>
+        <div v-if="aiStats.thinkTime > 0 && !aiThinking" class="ai-stats">
+          📊 AI: {{ aiStats.thinkTime }}ms / {{ aiStats.nodesSearched }} 节点
+        </div>
       </div>
     </header>
 
@@ -168,8 +174,85 @@ export default {
       return null
     }
 
-    // 简化的AI逻辑
-    const makeAIMove = () => {
+    // AI思考状态
+    const aiThinking = ref(false)
+    const aiStats = ref({ thinkTime: 0, nodesSearched: 0, depth: 0 })
+
+    // 优化的AI逻辑
+    const makeAIMove = async () => {
+      if (aiThinking.value) return
+
+      try {
+        aiThinking.value = true
+        const player = currentPlayer.value
+        
+        // 动态导入优化AI
+        const { gomokuAI } = await import('../utils/optimizedAI')
+        
+        // 根据难度调整AI配置
+        const difficulty = getDifficulty()
+        gomokuAI.updateConfig(difficulty)
+
+        // 获取AI最佳走法
+        const result = await gomokuAI.getBestMove(
+          board.map(row => [...row]), 
+          player
+        )
+
+        // 更新AI统计信息
+        aiStats.value = {
+          thinkTime: result.thinkTime,
+          nodesSearched: result.nodesSearched,
+          depth: difficulty.maxDepth
+        }
+
+        const { row, col } = result.position
+        
+        // 执行AI走棋
+        board[row][col] = player
+        moves.value.push({ row, col, player })
+        lastMoveTime.value = Date.now()
+
+        // 播放AI落子音效
+        const soundName = player === 'black' ? 'placeBlack' : 'placeWhite'
+        soundManager.playSound(soundName, { pitch: 0.9 }) // AI音效音调稍低
+
+        // 检查获胜
+        const gameWinner = checkWinner(row, col, player)
+        if (gameWinner) {
+          winner.value = gameWinner
+          // 播放获胜音效
+          setTimeout(() => soundManager.playSound('gameWin'), 200)
+          return
+        }
+
+        currentPlayer.value = player === 'black' ? 'white' : 'black'
+        
+        console.log(`🤖 AI思考 ${result.thinkTime}ms, 搜索 ${result.nodesSearched} 节点`)
+        
+      } catch (error) {
+        console.error('AI思考出错:', error)
+        // 降级到简单AI
+        fallbackAIMove()
+      } finally {
+        aiThinking.value = false
+      }
+    }
+
+    // 获取AI难度配置
+    const getDifficulty = () => {
+      const moveCount = moves.value.length
+      if (moveCount < 10) {
+        return { difficulty: 'medium', maxDepth: 4, maxThinkTime: 2000, enableOpening: true, randomFactor: 0.15 }
+      } else if (moveCount < 30) {
+        return { difficulty: 'hard', maxDepth: 6, maxThinkTime: 4000, enableOpening: false, randomFactor: 0.1 }
+      } else {
+        return { difficulty: 'expert', maxDepth: 8, maxThinkTime: 6000, enableOpening: false, randomFactor: 0.05 }
+      }
+    }
+
+    // 降级AI逻辑（备用）
+    const fallbackAIMove = () => {
       const emptyCells = []
       for (let i = 0; i < 15; i++) {
         for (let j = 0; j < 15; j++) {
@@ -181,7 +264,6 @@ export default {
 
       if (emptyCells.length === 0) return
 
-      // 简单策略：优先在棋盘中心区域下棋
       const centerCells = emptyCells.filter(([r, c]) => {
         const distanceFromCenter = Math.abs(r - 7) + Math.abs(c - 7)
         return distanceFromCenter <= 4
@@ -196,14 +278,11 @@ export default {
       moves.value.push({ row, col, player })
       lastMoveTime.value = Date.now()
 
-      // 播放AI落子音效
-      const soundName = player === 'black' ? 'placeBlack' : 'placeWhite'
-      soundManager.playSound(soundName, { pitch: 0.9 }) // AI音效音调稍低
-
+      soundManager.playSound('placeWhite', { pitch: 0.9 })
+      
       const gameWinner = checkWinner(row, col, player)
       if (gameWinner) {
         winner.value = gameWinner
-        // 播放获胜音效
         setTimeout(() => soundManager.playSound('gameWin'), 200)
         return
       }
@@ -428,6 +507,8 @@ export default {
       winner,
       moves,
       aiEnabled,
+      aiThinking,
+      aiStats,
       showAutoSaveRestore,
       soundEnabled,
       backgroundMusicEnabled,
@@ -502,6 +583,32 @@ export default {
   font-size: 1.1rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   animation: pulse 1s infinite;
+}
+
+.ai-thinking {
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  font-weight: bold;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  animation: thinking 1.5s ease-in-out infinite;
+}
+
+@keyframes thinking {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+.ai-stats {
+  background: rgba(76, 175, 80, 0.1);
+  color: #2E7D32;
+  padding: 0.3rem 0.8rem;
+  border-radius: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid rgba(76, 175, 80, 0.3);
 }
 
 @keyframes pulse {
