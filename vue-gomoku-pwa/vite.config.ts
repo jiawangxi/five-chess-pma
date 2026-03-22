@@ -13,21 +13,147 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        // 缓存策略
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // 运行时缓存
+        // 缓存模式配置
+        skipWaiting: true,
+        clientsClaim: true,
+        
+        // 预缓存文件模式
+        globPatterns: [
+          '**/*.{js,css,html,ico,png,svg,woff2}',
+          'manifest.webmanifest'
+        ],
+        
+        // 排除不需要缓存的文件
+        globIgnores: [
+          '**/node_modules/**/*',
+          '**/*.map',
+          'dev-sw.js*',
+          'workbox-*.js.map'
+        ],
+        
+        // 预缓存配置
+        dontCacheBustURLsMatching: /\.\w{8}\./,
+        
+        // 运行时缓存策略
         runtimeCaching: [
+          // 1. HTML页面 - 网络优先，回退到缓存
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
+            urlPattern: /^https:\/\/[^\/]+\/$/,
+            handler: 'NetworkFirst',
             options: {
-              cacheName: 'google-fonts-cache',
+              cacheName: 'pages-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 1周
+              },
+              networkTimeoutSeconds: 3
+            }
+          },
+          
+          // 2. API调用 - 网络优先（如果有后端API）
+          {
+            urlPattern: /^https:\/\/[^\/]+\/api\/.*/,
+            handler: 'NetworkFirst', 
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 // 1天
+              },
+              networkTimeoutSeconds: 5
+            }
+          },
+          
+          // 3. 静态资源 - 缓存优先
+          {
+            urlPattern: /\.(?:js|css|woff2?|ttf|eot)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'static-resources',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1年
               }
             }
+          },
+          
+          // 4. 图片资源 - 缓存优先，回退到网络
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 90 // 90天
+              }
+            }
+          },
+          
+          // 5. 外部字体 - 缓存优先
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-stylesheets',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1年
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1年
+              }
+            }
+          },
+          
+          // 6. CDN资源 - 缓存优先
+          {
+            urlPattern: /^https:\/\/cdn\./,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'cdn-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30天
+              }
+            }
+          },
+          
+          // 7. 游戏存档数据 - 网络优先（用于云同步，如果实现）
+          {
+            urlPattern: /\/api\/save\/.*/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'game-saves',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 1周
+              },
+              networkTimeoutSeconds: 3
+            }
           }
+        ],
+        
+        // 导航回退缓存
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
+        
+        // 离线回退页面
+        offlineGoogleAnalytics: false,
+        
+        // 自定义Service Worker内容
+        additionalManifestEntries: [
+          // 确保关键页面被预缓存
+          { url: '/index.html', revision: null },
+          { url: '/manifest.webmanifest', revision: null }
         ]
       },
       // PWA配置

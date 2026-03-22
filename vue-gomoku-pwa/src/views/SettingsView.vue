@@ -194,6 +194,7 @@ import { useRouter } from 'vue-router'
 import { gameStorage } from '../utils/gameStorage'
 import { soundManager } from '../utils/soundManager'
 import { gameSettings, settingsManager } from '../utils/settingsManager'
+import { cacheManager, type CacheStatus } from '../utils/cacheManager'
 
 export default {
   name: 'SettingsView',
@@ -210,6 +211,15 @@ export default {
       autoSaveSize: 0,
       totalSize: 0
     })
+    
+    // PWA缓存状态
+    const cacheStatus = reactive<CacheStatus>({
+      isSupported: false,
+      isOnline: false,
+      cacheNames: [],
+      totalSize: 0,
+      lastUpdated: null
+    })
 
     // 设置已由全局设置管理器自动处理
 
@@ -219,6 +229,59 @@ export default {
       storageInfo.slotsSize = Math.round(info.slotsSize / 1024)
       storageInfo.autoSaveSize = Math.round(info.autoSaveSize / 1024)
       storageInfo.totalSize = Math.round(info.totalSize / 1024)
+    }
+    
+    // 更新缓存状态
+    const updateCacheStatus = async () => {
+      try {
+        const status = await cacheManager.getStatus()
+        Object.assign(cacheStatus, status)
+      } catch (error) {
+        console.error('获取缓存状态失败:', error)
+      }
+    }
+    
+    // 清理PWA缓存
+    const clearPWACache = async () => {
+      if (confirm('确定要清理所有PWA缓存吗？这将删除所有离线数据，下次访问时需要重新下载。')) {
+        try {
+          await cacheManager.clearAllCaches()
+          await updateCacheStatus()
+          settingsManager.playSound('buttonClick')
+          alert('? PWA缓存已清理完成')
+        } catch (error) {
+          console.error('清理PWA缓存失败:', error)
+          settingsManager.playSound('error')
+          alert('? 清理PWA缓存失败')
+        }
+      }
+    }
+    
+    // 更新PWA缓存
+    const updatePWACache = async () => {
+      if (confirm('确定要强制更新PWA缓存吗？这将清理旧缓存并重新下载最新版本。')) {
+        try {
+          await cacheManager.forceUpdateCache()
+          await updateCacheStatus()
+          settingsManager.playSound('buttonClick')
+          alert('? PWA缓存已更新完成')
+        } catch (error) {
+          console.error('更新PWA缓存失败:', error)
+          settingsManager.playSound('error')
+          alert('? 更新PWA缓存失败')
+        }
+      }
+    }
+    
+    // 获取缓存报告
+    const getCacheReport = async () => {
+      try {
+        const report = await cacheManager.getCacheReport()
+        alert(`? 缓存状态报告:\n\n${report}`)
+      } catch (error) {
+        console.error('获取缓存报告失败:', error)
+        alert('? 获取缓存报告失败')
+      }
     }
 
     // 音效设置更新
@@ -322,14 +385,16 @@ export default {
     }
 
     // 初始化
-    onMounted(() => {
+    onMounted(async () => {
       updateStorageInfo()
+      await updateCacheStatus()
       // 设置已由全局设置管理器处理，主题也会自动应用
     })
 
     return {
       settings,
       storageInfo,
+      cacheStatus,
       fileInput,
       
       // 方法
@@ -345,7 +410,13 @@ export default {
       handleFileImport,
       resetSettings,
       clearAllData,
-      goBack
+      goBack,
+      
+      // PWA缓存管理
+      clearPWACache,
+      updatePWACache,
+      getCacheReport,
+      updateCacheStatus
     }
   }
 }
