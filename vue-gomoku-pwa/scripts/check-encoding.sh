@@ -10,8 +10,8 @@ echo "? 检查项目源码文件编码..."
 
 cd "$PROJECT_DIR"
 
-# 查找所有源码文件
-FILES=$(find ./src -name '*.vue' -o -name '*.ts' -o -name '*.js' -o -name '*.html' -o -name '*.css')
+# 查找所有源码文件（包括MD文档）
+FILES=$(find ./src -name '*.vue' -o -name '*.ts' -o -name '*.js' -o -name '*.html' -o -name '*.css'; find . -name '*.md' -not -path './node_modules/*' -not -path './dist/*')
 
 TOTAL=0
 UTF8_COUNT=0
