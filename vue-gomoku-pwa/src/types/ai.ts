@@ -1,4 +1,4 @@
-// AI ÄÑ¶È¼¶±ğºÍÅäÖÃ
+// AI éš¾åº¦çº§åˆ«å’Œé…ç½®
 export enum AILevel {
   Easy = 'easy',
   Medium = 'medium',

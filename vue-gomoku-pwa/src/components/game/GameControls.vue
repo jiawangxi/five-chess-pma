@@ -2,9 +2,9 @@
   <div class="game-controls">
     <div class="game-info">
       <div class="current-player">
-        <span class="label">µ±Ç°Íæ¼Ò:</span>
+        <span class="label">å½“å‰ç©å®¶:</span>
         <div class="player-indicator" :class="{ 'black': currentPlayer === PieceType.Black, 'white': currentPlayer === PieceType.White }">
-          {{ currentPlayer === PieceType.Black ? 'ºÚÆå' : '°×Æå' }}
+          {{ currentPlayer === PieceType.Black ? 'é»‘æ£‹' : 'ç™½æ£‹' }}
         </div>
       </div>
       
@@ -17,28 +17,28 @@
 
     <div class="control-buttons">
       <button @click="handleNewGame" class="btn btn-primary">
-        ? ĞÂÓÎÏ·
+        ? æ–°æ¸¸æˆ
       </button>
       
       <button @click="handleUndo" class="btn btn-secondary" :disabled="!canUndo">
-        ? »ÚÆå
+        ? æ‚”æ£‹
       </button>
       
       <button @click="handleAIMove" class="btn btn-secondary" :disabled="isAIThinking || gameStatus !== GameStatus.Playing">
-        ? AI ÌáÊ¾
+        ? AI æç¤º
       </button>
     </div>
 
     <div class="game-stats">
       <div class="stat-item">
-        <span class="stat-label">²½Êı:</span>
+        <span class="stat-label">æ­¥æ•°:</span>
         <span class="stat-value">{{ totalMoves }}</span>
       </div>
     </div>
 
     <div v-if="isAIThinking" class="ai-thinking">
       <div class="thinking-animation">?</div>
-      <span>AI Ë¼¿¼ÖĞ...</span>
+      <span>AI æ€è€ƒä¸­...</span>
     </div>
   </div>
 </template>
@@ -61,11 +61,11 @@ const canUndo = computed(() => gameStore.gameState.moves.length > 0)
 const statusText = computed(() => {
   switch (gameStatus.value) {
     case GameStatus.BlackWin:
-      return '? ºÚÆå»ñÊ¤£¡'
+      return '? é»‘æ£‹è·èƒœï¼'
     case GameStatus.WhiteWin:
-      return '? °×Æå»ñÊ¤£¡'
+      return '? ç™½æ£‹è·èƒœï¼'
     case GameStatus.Draw:
-      return '? Æ½¾Ö£¡'
+      return '? å¹³å±€ï¼'
     default:
       return ''
   }
@@ -100,13 +100,13 @@ const handleAIMove = async () => {
   try {
     const ai = new GomokuAI(AI_CONFIGS[AILevel.Medium])
     const aiMove = await ai.getBestMove(
-      gameStore.gameState.board.map(row => [...row]), // ¸´ÖÆÊı×é
+      gameStore.gameState.board.map(row => [...row]), // å¤åˆ¶æ•°ç»„
       gameStore.gameState.currentPlayer
     )
     
     gameStore.makeMove(aiMove)
   } catch (error) {
-    console.error('AI ¼ÆËã´íÎó:', error)
+    console.error('AI è®¡ç®—é”™è¯¯:', error)
   } finally {
     isAIThinking.value = false
   }
@@ -264,7 +264,7 @@ const handleAIMove = async () => {
   }
 }
 
-/* ÒÆ¶¯¶ËÊÊÅä */
+/* ç§»åŠ¨ç«¯é€‚é… */
 @media (max-width: 768px) {
   .game-controls {
     min-width: auto;
