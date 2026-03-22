@@ -1,0 +1,44 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="512" height="512" fill="#2563eb" rx="64"/>
+  
+  <!-- 棋盘网格 -->
+  <g stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8">
+    <!-- 横线 -->
+    <path d="M80 120 L432 120"/>
+    <path d="M80 160 L432 160"/>
+    <path d="M80 200 L432 200"/>
+    <path d="M80 240 L432 240"/>
+    <path d="M80 280 L432 280"/>
+    <path d="M80 320 L432 320"/>
+    <path d="M80 360 L432 360"/>
+    <path d="M80 400 L432 400"/>
+    
+    <!-- 竖线 -->
+    <path d="M120 80 L120 432"/>
+    <path d="M160 80 L160 432"/>
+    <path d="M200 80 L200 432"/>
+    <path d="M240 80 L240 432"/>
+    <path d="M280 80 L280 432"/>
+    <path d="M320 80 L320 432"/>
+    <path d="M360 80 L360 432"/>
+    <path d="M400 80 L400 432"/>
+  </g>
+  
+  <!-- 棋子 -->
+  <!-- 黑子 -->
+  <circle cx="200" cy="200" r="16" fill="#000000"/>
+  <circle cx="280" cy="240" r="16" fill="#000000"/>
+  <circle cx="240" cy="280" r="16" fill="#000000"/>
+  
+  <!-- 白子 -->
+  <circle cx="240" cy="200" r="16" fill="#ffffff"/>
+  <circle cx="280" cy="200" r="16" fill="#ffffff"/>
+  <circle cx="200" cy="240" r="16" fill="#ffffff"/>
+  <circle cx="320" cy="240" r="16" fill="#ffffff"/>
+  
+  <!-- 标题文字 -->
+  <text x="256" y="60" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="32" font-weight="bold">
+    五子棋
+  </text>
+</svg>

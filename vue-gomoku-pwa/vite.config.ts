@@ -13,17 +13,17 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        // »º´æÄ£Ê½ÅäÖÃ
+        // 缓存模式配置
         skipWaiting: true,
         clientsClaim: true,
         
-        // Ô¤»º´æÎÄ¼þÄ£Ê½
+        // 预缓存文件模式
         globPatterns: [
           '**/*.{js,css,html,ico,png,svg,woff2}',
           'manifest.webmanifest'
         ],
         
-        // ÅÅ³ý²»ÐèÒª»º´æµÄÎÄ¼þ
+        // 排除不需要缓存的文件
         globIgnores: [
           '**/node_modules/**/*',
           '**/*.map',
@@ -31,12 +31,12 @@ export default defineConfig({
           'workbox-*.js.map'
         ],
         
-        // Ô¤»º´æÅäÖÃ
+        // 预缓存配置
         dontCacheBustURLsMatching: /\.\w{8}\./,
         
-        // ÔËÐÐÊ±»º´æ²ßÂÔ
+        // 运行时缓存策略
         runtimeCaching: [
-          // 1. HTMLÒ³Ãæ - ÍøÂçÓÅÏÈ£¬»ØÍËµ½»º´æ
+          // 1. HTML页面 - 网络优先，回退到缓存
           {
             urlPattern: /^https:\/\/[^\/]+\/$/,
             handler: 'NetworkFirst',
@@ -44,13 +44,13 @@ export default defineConfig({
               cacheName: 'pages-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 1ÖÜ
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 1周
               },
               networkTimeoutSeconds: 3
             }
           },
           
-          // 2. APIµ÷ÓÃ - ÍøÂçÓÅÏÈ£¨Èç¹ûÓÐºó¶ËAPI£©
+          // 2. API调用 - 网络优先（如果有后端API）
           {
             urlPattern: /^https:\/\/[^\/]+\/api\/.*/,
             handler: 'NetworkFirst', 
@@ -58,13 +58,13 @@ export default defineConfig({
               cacheName: 'api-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 1Ìì
+                maxAgeSeconds: 60 * 60 * 24 // 1天
               },
               networkTimeoutSeconds: 5
             }
           },
           
-          // 3. ¾²Ì¬×ÊÔ´ - »º´æÓÅÏÈ
+          // 3. 静态资源 - 缓存优先
           {
             urlPattern: /\.(?:js|css|woff2?|ttf|eot)$/,
             handler: 'CacheFirst',
@@ -72,12 +72,12 @@ export default defineConfig({
               cacheName: 'static-resources',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1Äê
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1年
               }
             }
           },
           
-          // 4. Í¼Æ¬×ÊÔ´ - »º´æÓÅÏÈ£¬»ØÍËµ½ÍøÂç
+          // 4. 图片资源 - 缓存优先，回退到网络
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
             handler: 'CacheFirst',
@@ -85,12 +85,12 @@ export default defineConfig({
               cacheName: 'images-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 90 // 90Ìì
+                maxAgeSeconds: 60 * 60 * 24 * 90 // 90天
               }
             }
           },
           
-          // 5. Íâ²¿×ÖÌå - »º´æÓÅÏÈ
+          // 5. 外部字体 - 缓存优先
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/,
             handler: 'CacheFirst',
@@ -98,7 +98,7 @@ export default defineConfig({
               cacheName: 'google-fonts-stylesheets',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1Äê
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1年
               }
             }
           },
@@ -109,12 +109,12 @@ export default defineConfig({
               cacheName: 'google-fonts-webfonts',
               expiration: {
                 maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1Äê
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1年
               }
             }
           },
           
-          // 6. CDN×ÊÔ´ - »º´æÓÅÏÈ
+          // 6. CDN资源 - 缓存优先
           {
             urlPattern: /^https:\/\/cdn\./,
             handler: 'CacheFirst',
@@ -122,12 +122,12 @@ export default defineConfig({
               cacheName: 'cdn-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30Ìì
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30天
               }
             }
           },
           
-          // 7. ÓÎÏ·´æµµÊý¾Ý - ÍøÂçÓÅÏÈ£¨ÓÃÓÚÔÆÍ¬²½£¬Èç¹ûÊµÏÖ£©
+          // 7. 游戏存档数据 - 网络优先（用于云同步，如果实现）
           {
             urlPattern: /\/api\/save\/.*/,
             handler: 'NetworkFirst',
@@ -135,32 +135,32 @@ export default defineConfig({
               cacheName: 'game-saves',
               expiration: {
                 maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 1ÖÜ
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 1周
               },
               networkTimeoutSeconds: 3
             }
           }
         ],
         
-        // µ¼º½»ØÍË»º´æ
+        // 导航回退缓存
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
         
-        // ÀëÏß»ØÍËÒ³Ãæ
+        // 离线回退页面
         offlineGoogleAnalytics: false,
         
-        // ×Ô¶¨ÒåService WorkerÄÚÈÝ
+        // 自定义Service Worker内容
         additionalManifestEntries: [
-          // È·±£¹Ø¼üÒ³Ãæ±»Ô¤»º´æ
+          // 确保关键页面被预缓存
           { url: '/index.html', revision: null },
           { url: '/manifest.webmanifest', revision: null }
         ]
       },
-      // PWAÅäÖÃ
+      // PWA配置
       manifest: {
-        name: 'Îå×ÓÆå´óÊ¦',
-        short_name: 'Îå×ÓÆå',
-        description: '×¨Òµ¼¶Îå×ÓÆåPWAÓ¦ÓÃ£¬Ö§³ÖAI¶ÔÕ½ºÍÀëÏßÓÎÏ·',
+        name: '五子棋大师',
+        short_name: '五子棋',
+        description: '专业级五子棋PWA应用，支持AI对战和离线游戏',
         theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',
@@ -186,7 +186,7 @@ export default defineConfig({
           }
         ]
       },
-      // ¿ª·¢Ñ¡Ïî
+      // 开发选项
       devOptions: {
         enabled: false
       }
@@ -205,51 +205,51 @@ export default defineConfig({
     port: 5173
   },
   build: {
-    // Éú²ú¹¹½¨Ä¿±ê
+    // 生产构建目标
     target: 'es2018',
     outDir: 'dist',
-    // ÆôÓÃÑ¹Ëõ
+    // 启用压缩
     minify: 'terser', 
-    // CSS´úÂë·Ö¸î
+    // CSS代码分割
     cssCodeSplit: true,
-    // ×ÊÔ´ÄÚÁªÏÞÖÆ (4KB)
+    // 资源内联限制 (4KB)
     assetsInlineLimit: 4096,
-    // ÆôÓÃÔ´ÂëÓ³Éä£¨ÓÃÓÚµ÷ÊÔ£©
+    // 启用源码映射（用于调试）
     sourcemap: process.env.NODE_ENV === 'development',
     
     rollupOptions: {
-      // ÓÅ»¯´úÂë·Ö¸î
+      // 优化代码分割
       output: {
         manualChunks: {
-          // Vue¿ò¼ÜºËÐÄ
+          // Vue框架核心
           vue: ['vue', 'vue-router'],
-          // AIÒýÇæ¶ÀÁ¢°ü
+          // AI引擎独立包
           'ai-engine': ['./src/utils/optimizedAI'],
-          // ¹¤¾ßÄ£¿é
+          // 工具模块
           utils: ['./src/utils/gameStorage', './src/utils/soundManager', './src/utils/settingsManager'],
         },
-        // ÎÄ¼þÃüÃû²ßÂÔ
+        // 文件命名策略
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]'
       },
-      // Íâ²¿ÒÀÀµ£¨Èç¹ûÐèÒªCDN¼ÓÔØ£©
+      // 外部依赖（如果需要CDN加载）
       external: []
     },
     
-    // TerserÑ¹ËõÑ¡Ïî
+    // Terser压缩选项
     terserOptions: {
       compress: {
-        // ÒÆ³ýconsole.log
+        // 移除console.log
         drop_console: process.env.NODE_ENV === 'production',
         drop_debugger: true
       },
       mangle: {
-        // ±£Áôº¯ÊýÃû£¨ÓÃÓÚµ÷ÊÔ£©
+        // 保留函数名（用于调试）
         keep_fnames: process.env.NODE_ENV === 'development'
       },
       format: {
-        // ÒÆ³ý×¢ÊÍ
+        // 移除注释
         comments: false
       }
     }

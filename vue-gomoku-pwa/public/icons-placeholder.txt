@@ -1,17 +1,17 @@
-# PWAÍ¼±êÎÄ¼þÕ¼Î»·û
+# PWA图标文件占位符
 # 
-# ÔÚÊµ¼Ê²¿ÊðÖÐ£¬ÐèÒª½«ÒÔÏÂSVGÍ¼±ê×ª»»ÎªPNG¸ñÊ½£º
-# - icon-192x192.png (192x192ÏñËØ)  
-# - icon-512x512.png (512x512ÏñËØ)
-# - favicon.ico (32x32ÏñËØ)
+# 在实际部署中，需要将以下SVG图标转换为PNG格式：
+# - icon-192x192.png (192x192像素)  
+# - icon-512x512.png (512x512像素)
+# - favicon.ico (32x32像素)
 #
-# ¿ÉÒÔÊ¹ÓÃÒÔÏÂ¹¤¾ß£º
-# 1. ÔÚÏß×ª»»¹¤¾ß£ºhttps://svgtopng.com/ »ò https://convertio.co/svg-png/
-# 2. ÃüÁîÐÐ¹¤¾ß£ºlibrsvg-bin (Ubuntu) »ò inkscape
-# 3. Node.js¹¤¾ß£ºsharp ¿â
+# 可以使用以下工具：
+# 1. 在线转换工具：https://svgtopng.com/ 或 https://convertio.co/svg-png/
+# 2. 命令行工具：librsvg-bin (Ubuntu) 或 inkscape
+# 3. Node.js工具：sharp 库
 #
-# ×ª»»ÃüÁîÊ¾Àý£º
+# 转换命令示例：
 # rsvg-convert -w 192 -h 192 icon.svg > icon-192x192.png  
 # rsvg-convert -w 512 -h 512 icon.svg > icon-512x512.png
 # 
-# ÔÝÊ±´´½¨Õ¼Î»·ûÎÄ¼þ¹©¿ª·¢Ê¹ÓÃ
+# 暂时创建占位符文件供开发使用
