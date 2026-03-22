@@ -386,6 +386,9 @@ export default {
 
     // 组件挂载时初始化
     onMounted(async () => {
+      // 设置页面标题
+      document.title = '🎯 五子棋大师 - 智能AI对战游戏'
+      
       // 初始化音效系统
       initAudioSettings()
       
