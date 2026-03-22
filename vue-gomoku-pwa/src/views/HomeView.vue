@@ -87,6 +87,16 @@
           {{ backgroundMusicEnabled ? '🎵' : '🎼' }} 音乐
         </button>
       </div>
+      <div class="ai-difficulty-control">
+        <label>🤖 AI难度:</label>
+        <select v-model="aiDifficulty" @change="changeAIDifficulty(aiDifficulty)" class="difficulty-select">
+          <option value="easy">😊 简单</option>
+          <option value="medium">🙂 中等</option>
+          <option value="hard">😐 困难</option>
+          <option value="expert">😤 专家</option>
+          <option value="master">😈 大师</option>
+        </select>
+      </div>
     </footer>
   </div>
 </template>
@@ -239,16 +249,25 @@ export default {
       }
     }
 
+    // AI难度等级
+    const aiDifficulty = ref('hard')
+    
     // 获取AI难度配置
     const getDifficulty = () => {
-      const moveCount = moves.value.length
-      if (moveCount < 10) {
-        return { difficulty: 'medium', maxDepth: 4, maxThinkTime: 2000, enableOpening: true, randomFactor: 0.15 }
-      } else if (moveCount < 30) {
-        return { difficulty: 'hard', maxDepth: 6, maxThinkTime: 4000, enableOpening: false, randomFactor: 0.1 }
-      } else {
-        return { difficulty: 'expert', maxDepth: 8, maxThinkTime: 6000, enableOpening: false, randomFactor: 0.05 }
+      const configs = {
+        easy: { difficulty: 'easy', maxDepth: 2, maxThinkTime: 500, enableOpening: true, randomFactor: 0.4 },
+        medium: { difficulty: 'medium', maxDepth: 4, maxThinkTime: 2000, enableOpening: true, randomFactor: 0.2 },
+        hard: { difficulty: 'hard', maxDepth: 6, maxThinkTime: 4000, enableOpening: true, randomFactor: 0.1 },
+        expert: { difficulty: 'expert', maxDepth: 8, maxThinkTime: 8000, enableOpening: true, randomFactor: 0.05 },
+        master: { difficulty: 'master', maxDepth: 10, maxThinkTime: 12000, enableOpening: true, randomFactor: 0.02 }
       }
+      return configs[aiDifficulty.value] || configs.hard
+    }
+
+    // 改变AI难度
+    const changeAIDifficulty = (newDifficulty) => {
+      aiDifficulty.value = newDifficulty
+      soundManager.playSound('buttonClick')
     }
 
     // 降级AI逻辑（备用）
@@ -507,6 +526,7 @@ export default {
       winner,
       moves,
       aiEnabled,
+      aiDifficulty,
       aiThinking,
       aiStats,
       showAutoSaveRestore,
@@ -519,7 +539,8 @@ export default {
       restoreAutoSave,
       dismissAutoSave,
       toggleSound,
-      toggleBackgroundMusic
+      toggleBackgroundMusic,
+      changeAIDifficulty
     }
   }
 }
@@ -792,6 +813,45 @@ export default {
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
+.ai-difficulty-control {
+  background: rgba(255,255,255,0.9);
+  padding: 0.75rem 1rem;
+  border-radius: 2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-difficulty-control label {
+  font-weight: bold;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.difficulty-select {
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.difficulty-select:hover {
+  border-color: #4CAF50;
+  transform: translateY(-1px);
+}
+
+.difficulty-select:focus {
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
 /* 自动存档恢复弹窗 */
 .auto-save-restore {
   position: fixed;
@@ -895,6 +955,16 @@ export default {
   .btn-music {
     flex: 1;
     max-width: 100px;
+  }
+
+  .ai-difficulty-control {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .difficulty-select {
+    flex: 1;
+    max-width: 120px;
   }
 }
 

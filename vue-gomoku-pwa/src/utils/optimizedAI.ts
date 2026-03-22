@@ -314,12 +314,16 @@ export class GomokuAI {
   ): Position[] {
     const candidates: Position[] = []
     const visited = new Set<string>()
+    const opponent = player === 'black' ? 'white' : 'black'
 
-    // 优先检查已有棋子周围的位置
+    // 首先检查关键威胁位置
+    const threatCandidates = this.findThreatPositions(board, player, opponent)
+    
+    // 然后检查已有棋子周围的位置
     for (let i = 0; i < this.BOARD_SIZE; i++) {
       for (let j = 0; j < this.BOARD_SIZE; j++) {
         if (board[i][j] !== null) {
-          // 检查周围8个方向
+          // 检查周围范围更大
           for (let di = -2; di <= 2; di++) {
             for (let dj = -2; dj <= 2; dj++) {
               if (di === 0 && dj === 0) continue
@@ -341,6 +345,14 @@ export class GomokuAI {
       }
     }
 
+    // 合并威胁候选位置
+    for (const threat of threatCandidates) {
+      const key = `${threat.row},${threat.col}`
+      if (!visited.has(key)) {
+        candidates.push(threat)
+      }
+    }
+
     // 如果没有候选位置（空棋盘），返回中心位置
     if (candidates.length === 0) {
       return [{ row: 7, col: 7 }]
@@ -350,6 +362,36 @@ export class GomokuAI {
     return candidates
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, maxCandidates)
+  }
+
+  /**
+   * 查找威胁位置
+   */
+  private findThreatPositions(
+    board: (string | null)[][],
+    player: 'black' | 'white',
+    opponent: 'black' | 'white'
+  ): Position[] {
+    const threats: Position[] = []
+    
+    for (let i = 0; i < this.BOARD_SIZE; i++) {
+      for (let j = 0; j < this.BOARD_SIZE; j++) {
+        if (board[i][j] !== null) continue
+        
+        // 检查这个位置对我方的威胁价值
+        const myThreat = this.evaluatePosition(board, i, j, player)
+        // 检查这个位置对对手的威胁价值
+        const oppThreat = this.evaluatePosition(board, i, j, opponent)
+        
+        // 如果是关键位置，加入候选
+        if (myThreat >= this.PATTERNS.LIVE_THREE || oppThreat >= this.PATTERNS.LIVE_THREE) {
+          const score = Math.max(myThreat, oppThreat * 1.2) // 防守稍微重要一些
+          threats.push({ row: i, col: j, score })
+        }
+      }
+    }
+    
+    return threats.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 8)
   }
 
   /**
@@ -390,16 +432,67 @@ export class GomokuAI {
     player: 'black' | 'white'
   ): number {
     let totalScore = 0
+    const opponent = player === 'black' ? 'white' : 'black'
     const directions = [
       [1, 0], [0, 1], [1, 1], [1, -1] // 水平、垂直、对角线
     ]
 
+    // 先检查是否能立即获胜或阻止对手获胜
+    for (const [dx, dy] of directions) {
+      // 检查自己的威胁
+      const myThreat = this.checkThreat(board, row, col, dx, dy, player)
+      if (myThreat >= this.PATTERNS.FIVE) {
+        return this.PATTERNS.FIVE // 立即获胜
+      }
+      if (myThreat >= this.PATTERNS.LIVE_FOUR) {
+        totalScore += myThreat * 2 // 强化进攻
+      }
+
+      // 检查对手的威胁
+      const oppThreat = this.checkThreat(board, row, col, dx, dy, opponent)
+      if (oppThreat >= this.PATTERNS.LIVE_FOUR) {
+        totalScore += oppThreat * 1.5 // 必须防守
+      }
+    }
+
+    // 正常评分
     for (const [dx, dy] of directions) {
       const lineScore = this.evaluateLine(board, row, col, dx, dy, player)
       totalScore += lineScore
     }
 
+    // 位置权重：中心位置更有价值
+    const centerBonus = this.getCenterBonus(row, col)
+    totalScore += centerBonus
+
     return totalScore
+  }
+
+  /**
+   * 检查威胁等级
+   */
+  private checkThreat(
+    board: (string | null)[][],
+    row: number,
+    col: number,
+    dx: number,
+    dy: number,
+    player: 'black' | 'white'
+  ): number {
+    // 临时放置棋子
+    board[row][col] = player
+    const threat = this.evaluateLine(board, row, col, dx, dy, player)
+    board[row][col] = null // 撤销
+    return threat
+  }
+
+  /**
+   * 获取中心位置奖励
+   */
+  private getCenterBonus(row: number, col: number): number {
+    const center = 7
+    const distance = Math.abs(row - center) + Math.abs(col - center)
+    return Math.max(0, 20 - distance * 2)
   }
 
   /**
@@ -450,18 +543,36 @@ export class GomokuAI {
     if (count >= 5) return this.PATTERNS.FIVE
     
     if (count === 4) {
-      return blocked === 0 ? this.PATTERNS.LIVE_FOUR : this.PATTERNS.RUSH_FOUR
+      if (blocked === 0) {
+        return this.PATTERNS.LIVE_FOUR // 活四，必胜
+      } else if (blocked === 1) {
+        return this.PATTERNS.RUSH_FOUR // 冲四，威胁很大
+      } else {
+        return this.PATTERNS.SLEEP_THREE // 双冲四基本无用
+      }
     }
     
     if (count === 3) {
-      return blocked === 0 ? this.PATTERNS.LIVE_THREE : this.PATTERNS.SLEEP_THREE
+      if (blocked === 0) {
+        return this.PATTERNS.LIVE_THREE // 活三，可形成多个活四
+      } else if (blocked === 1) {
+        return this.PATTERNS.SLEEP_THREE // 眠三，可形成冲四
+      } else {
+        return this.PATTERNS.SLEEP_TWO // 双堵基本无用
+      }
     }
     
     if (count === 2) {
-      return blocked === 0 ? this.PATTERNS.LIVE_TWO : this.PATTERNS.SLEEP_TWO
+      if (blocked === 0) {
+        return this.PATTERNS.LIVE_TWO // 活二，潜力较大
+      } else if (blocked === 1) {
+        return this.PATTERNS.SLEEP_TWO // 眠二，有一定价值
+      } else {
+        return 1 // 双堵活二价值很小
+      }
     }
     
-    return this.PATTERNS.LIVE_ONE
+    return blocked === 0 ? this.PATTERNS.LIVE_ONE : 1
   }
 
   /**
