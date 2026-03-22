@@ -20,7 +20,7 @@ export default defineConfig({
   // 全局测试配置
   use: {
     // 基础URL（会根据开发/生产环境自动调整）
-    baseURL: process.env.CI ? 'http://localhost:4173' : 'http://localhost:5175',
+    baseURL: 'http://localhost:4174',
     // 追踪配置（失败时保留）
     trace: 'retain-on-failure',
     // 截图配置

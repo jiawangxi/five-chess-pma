@@ -4,12 +4,12 @@
       <button @click="goBack" class="back-btn">
         ← 返回
       </button>
-      <h1>?? 游戏设置</h1>
+      <h1>游戏设置</h1>
     </header>
 
     <main class="settings-content">
       <section class="setting-section">
-        <h2>? 音效设置</h2>
+        <h2>音效设置</h2>
         <div class="setting-item">
           <label class="setting-label">
             <span>音效开关</span>
@@ -49,16 +49,16 @@
       </section>
 
       <section class="setting-section">
-        <h2>? AI设置</h2>
+        <h2>AI设置</h2>
         <div class="setting-item">
           <label class="setting-label">
             <span>默认难度</span>
             <select v-model="settings.defaultAIDifficulty" class="setting-select" @change="updateAISettings">
-              <option value="easy">? 简单</option>
-              <option value="medium">? 中等</option>
-              <option value="hard">? 困难</option>
-              <option value="expert">? 专家</option>
-              <option value="master">? 大师</option>
+              <option value="easy">简单</option>
+              <option value="medium">中等</option>
+              <option value="hard">困难</option>
+              <option value="expert">专家</option>
+              <option value="master">大师</option>
             </select>
           </label>
         </div>
@@ -76,7 +76,7 @@
       </section>
 
       <section class="setting-section">
-        <h2>? 游戏设置</h2>
+        <h2>游戏设置</h2>
         <div class="setting-item">
           <label class="setting-label">
             <span>自动保存</span>
@@ -113,14 +113,14 @@
       </section>
 
       <section class="setting-section">
-        <h2>? 显示设置</h2>
+        <h2>显示设置</h2>
         <div class="setting-item">
           <label class="setting-label">
             <span>主题模式</span>
             <select v-model="settings.theme" class="setting-select" @change="updateThemeSettings">
-              <option value="auto">? 自动</option>
-              <option value="light">?? 浅色</option>
-              <option value="dark">? 深色</option>
+              <option value="auto">自动</option>
+              <option value="light">浅色</option>
+              <option value="dark">深色</option>
             </select>
           </label>
         </div>
@@ -149,26 +149,26 @@
       </section>
 
       <section class="setting-section">
-        <h2>? 数据管理</h2>
+        <h2>数据管理</h2>
         <div class="setting-actions">
           <button @click="exportSettings" class="action-btn export-btn">
-            ? 导出设置
+            导出设置
           </button>
           <button @click="importSettings" class="action-btn import-btn">
-            ? 导入设置
+            导入设置
           </button>
           <button @click="resetSettings" class="action-btn reset-btn">
-            ? 恢复默认
+            恢复默认
           </button>
           <button @click="clearAllData" class="action-btn danger-btn">
-            ?? 清除所有数据
+            清除所有数据
           </button>
         </div>
         <input ref="fileInput" type="file" accept=".json" style="display: none" @change="handleFileImport">
       </section>
 
       <section class="setting-section">
-        <h2>? 存储信息</h2>
+        <h2>存储信息</h2>
         <div class="storage-info">
           <div class="info-item">
             <span class="info-label">游戏存档:</span>
@@ -186,11 +186,11 @@
       </section>
 
       <section class="setting-section" v-if="cacheStatus.isSupported">
-        <h2>? PWA缓存管理</h2>
+        <h2>PWA缓存管理</h2>
         <div class="storage-info">
           <div class="info-item">
             <span class="info-label">网络状态:</span>
-            <span class="info-value">{{ cacheStatus.isOnline ? '? 在线' : '? 离线' }}</span>
+            <span class="info-value">{{ cacheStatus.isOnline ? '在线' : '离线' }}</span>
           </div>
           <div class="info-item">
             <span class="info-label">缓存大小:</span>
@@ -203,13 +203,13 @@
         </div>
         <div class="setting-actions">
           <button @click="getCacheReport" class="action-btn info-btn">
-            ? 缓存报告
+            缓存报告
           </button>
           <button @click="updatePWACache" class="action-btn update-btn">
-            ? 更新缓存
+            更新缓存
           </button>
           <button @click="clearPWACache" class="action-btn warning-btn">
-            ? 清理缓存
+            清理缓存
           </button>
         </div>
       </section>
