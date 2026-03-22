@@ -1,5 +1,21 @@
-﻿<template>
+<template>
   <div class="game-container">
+    <!-- 自动存档恢复提示 -->
+    <div v-if="showAutoSaveRestore" class="auto-save-restore">
+      <div class="restore-dialog">
+        <h3>🔄 发现未完成的游戏</h3>
+        <p>检测到您有一局未完成的游戏，是否要继续？</p>
+        <div class="restore-actions">
+          <button @click="restoreAutoSave" class="btn btn-primary">
+            ✅ 继续游戏
+          </button>
+          <button @click="dismissAutoSave" class="btn btn-secondary">
+            ❌ 开始新游戏
+          </button>
+        </div>
+      </div>
+    </div>
+
     <header class="game-header">
       <h1>🎯 五子棋大师</h1>
       <div class="game-status">
@@ -62,7 +78,8 @@
 </template>
 
 <script>
-import { ref, reactive, nextTick } from 'vue'
+import { ref, reactive, nextTick, onMounted, onUnmounted } from 'vue'
+import { gameStorage, type GameState } from '../utils/gameStorage'
 
 export default {
   name: 'HomeView',
@@ -74,6 +91,10 @@ export default {
     const moves = ref([])
     const aiEnabled = ref(true)
     const winnerLine = ref([])
+    const gameId = ref('')
+    const gameStartTime = ref(0)
+    const lastMoveTime = ref(0)
+    const showAutoSaveRestore = ref(false)
 
     // 检查是否为获胜位置的棋子
     const isWinnerCell = (row, col) => {
@@ -146,6 +167,7 @@ export default {
       
       board[row][col] = currentPlayer.value
       moves.value.push({ row, col, player: currentPlayer.value })
+      lastMoveTime.value = Date.now()
 
       const gameWinner = checkWinner(row, col, currentPlayer.value)
       if (gameWinner) {
@@ -162,6 +184,7 @@ export default {
 
       board[row][col] = currentPlayer.value
       moves.value.push({ row, col, player: currentPlayer.value })
+      lastMoveTime.value = Date.now()
 
       const gameWinner = checkWinner(row, col, currentPlayer.value)
       if (gameWinner) {
@@ -206,7 +229,109 @@ export default {
         const aiMove = moves.value.pop()
         board[aiMove.row][aiMove.col] = null
       }
+      
+      lastMoveTime.value = Date.now()
     }
+
+    // 获取当前游戏状态
+    const getCurrentGameState = (): GameState => {
+      return {
+        board: board.map(row => [...row]),
+        currentPlayer: currentPlayer.value,
+        moves: [...moves.value],
+        winner: winner.value,
+        aiEnabled: aiEnabled.value,
+        gameStartTime: gameStartTime.value,
+        lastMoveTime: lastMoveTime.value,
+        gameId: gameId.value
+      }
+    }
+
+    // 从游戏状态恢复
+    const restoreGameState = (gameState: GameState) => {
+      // 清空当前棋盘
+      for (let i = 0; i < 15; i++) {
+        for (let j = 0; j < 15; j++) {
+          board[i][j] = null
+        }
+      }
+
+      // 恢复棋盘状态
+      gameState.board.forEach((row, rowIndex) => {
+        row.forEach((cell, colIndex) => {
+          board[rowIndex][colIndex] = cell
+        })
+      })
+
+      currentPlayer.value = gameState.currentPlayer
+      winner.value = gameState.winner
+      moves.value = [...gameState.moves]
+      aiEnabled.value = gameState.aiEnabled
+      gameStartTime.value = gameState.gameStartTime
+      lastMoveTime.value = gameState.lastMoveTime
+      gameId.value = gameState.gameId
+
+      // 重新计算获胜线
+      if (winner.value && moves.value.length > 0) {
+        const lastMove = moves.value[moves.value.length - 1]
+        checkWinner(lastMove.row, lastMove.col, winner.value)
+      }
+    }
+
+    // 恢复自动存档
+    const restoreAutoSave = () => {
+      const autoSaveData = gameStorage.loadAutoSave()
+      if (autoSaveData) {
+        restoreGameState(autoSaveData)
+        showAutoSaveRestore.value = false
+        console.log('✅ 成功恢复自动存档')
+      }
+    }
+
+    // 忽略自动存档
+    const dismissAutoSave = () => {
+      gameStorage.clearAutoSave()
+      showAutoSaveRestore.value = false
+      startNewGame()
+    }
+
+    // 开始新游戏（带初始化）
+    const startNewGame = () => {
+      newGame()
+      gameId.value = Date.now().toString(36) + Math.random().toString(36).substr(2)
+      gameStartTime.value = Date.now()
+      lastMoveTime.value = Date.now()
+    }
+
+    // 重写newGame函数
+    const newGameWithInit = () => {
+      if (moves.value.length > 0) {
+        // 如果当前有游戏进行中，询问是否确认
+        if (confirm('当前游戏尚未结束，确定要开始新游戏吗？')) {
+          startNewGame()
+        }
+      } else {
+        startNewGame()
+      }
+    }
+
+    // 组件挂载时初始化
+    onMounted(() => {
+      // 检查是否有自动存档需要恢复
+      if (gameStorage.hasAutoSave()) {
+        showAutoSaveRestore.value = true
+      } else {
+        startNewGame()
+      }
+
+      // 启用自动保存
+      gameStorage.enableAutoSave(getCurrentGameState, 15000) // 每15秒自动保存一次
+    })
+
+    // 组件卸载时清理
+    onUnmounted(() => {
+      gameStorage.disableAutoSave()
+    })
 
     return {
       board,
@@ -214,10 +339,13 @@ export default {
       winner,
       moves,
       aiEnabled,
+      showAutoSaveRestore,
       makeMove,
-      newGame,
+      newGame: newGameWithInit,
       undoMove,
-      isWinnerCell
+      isWinnerCell,
+      restoreAutoSave,
+      dismissAutoSave
     }
   }
 }
@@ -430,6 +558,70 @@ export default {
   width: 18px;
   height: 18px;
   cursor: pointer;
+}
+
+/* 自动存档恢复弹窗 */
+.auto-save-restore {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.restore-dialog {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.restore-dialog h3 {
+  color: #333;
+  margin: 0 0 1rem 0;
+  font-size: 1.3rem;
+}
+
+.restore-dialog p {
+  color: #666;
+  margin: 0 0 2rem 0;
+  line-height: 1.5;
+}
+
+.restore-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.restore-actions .btn {
+  min-width: 120px;
 }
 
 /* 移动端适配 */
